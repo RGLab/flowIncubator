@@ -1,0 +1,13 @@
+Package: flowIncubator
+Type: Package
+Title: Routines that don't belong to the core flow packages yet. 
+Version: 0.99.1
+Date: 2013-03-26
+Author: Mike Jiang
+Maintainer: Mike Jiang <wjiang2@fhcrc.org>
+Description: This package is designed to facilitate other flow core packages.  
+License: Artistic-2.0
+LazyLoad: yes
+Imports: flowWorkspace (>= 1.5.93)
+Collate: flowWorkspace-methods.R
+biocViews: FlowCytometry, DataImport, Preprocessing, DataRepresentation
