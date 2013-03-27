@@ -1,4 +1,4 @@
-importFrom(flowWorkspace, getData,add,Rm,getNodes,booleanFilter,recompute,GatingSetList)
-
+importMethodsFrom(flowWorkspace, getData,add,Rm,getNodes,recompute)
+importFrom(flowWorkspace,booleanFilter,GatingSetList)
 
 exportMethods("getData","split","merge")

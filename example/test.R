@@ -2,9 +2,9 @@
 # 
 # Author: wjiang2
 ###############################################################################
-
-library(flowIncubator)
 library(flowWorkspace)
+library(flowIncubator)
+
 
 #getData
 gs <- flowWorkspace:::load_gs("/home/wjiang2/rglab/workspace/analysis/HVTN080/output/HVTN_small/")
@@ -21,7 +21,7 @@ getData(gs[1],6)[[1]]
 
 getData(gs[[1]])[getIndices(gs[[1]],"TNFa+")|getIndices(gs[[1]],"IL2+"),]
 
-group_ind
+
 
 #split and merge
 gs_list<-lapply(list.files("flowIncubator/output/gs_toMerge",full=T),function(this_folder){
