@@ -31,22 +31,28 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj,y,...){
       
     })
 
-#group all the individual GatingSets based on their:
-#1 gating schemes
-#2 flow data structures (drop the unused channels if needed )
-#and merge them into several bigger GatingSets
+#split GatingSets into groups based on their gating schemes
+#Be careful that the splitted resluts still points to the original data set!!
+setMethod("split",signature=c("GatingSetList","missing"),function(x,f,...){
+#      browser()
+      node_seq <-unlist(lapply(x,function(this_gs){
+                this_gh <- this_gs[[1]]
+                this_nodes <- getNodes(this_gh,isPath=T)
+                paste(this_nodes,collapse = "")
+                
+              }))
+      split(x,node_seq)
+      
+    })
+      
+
+
+#drop the unused channels if needed before merging them 
 setMethod("merge",signature=c("GatingSetList"),function(x,path = tempdir(),...){
 #      browser()
-      #group gs by gating tree
+      
       message("Grouping by Gating tree...")
-      node_seq <-unlist(lapply(x,function(this_gs){
-            this_gh <- this_gs[[1]]
-            this_nodes <- getNodes(this_gh,isPath=T)
-            paste(this_nodes,collapse = "")
-            
-          }))
-      gs_groups <- split(x,node_seq)
-      message(length(gs_groups)," groups are found!")
+      gs_groups <- split(x)
       res <- lapply(1:length(gs_groups),function(i){
 #            browser()
             this_group <- gs_groups[[i]]

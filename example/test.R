@@ -22,13 +22,16 @@ getData(gs[1],6)[[1]]
 getData(gs[[1]])[getIndices(gs[[1]],"TNFa+")|getIndices(gs[[1]],"IL2+"),]
 
 group_ind
-#merge
 
-gs_list1<-lapply(list.files("flowIncubator/output/gs_toMerge",full=T),function(this_folder){
+#split and merge
+gs_list<-lapply(list.files("flowIncubator/output/gs_toMerge",full=T),function(this_folder){
       flowWorkspace:::load_gs(this_folder)
     })
 
-gs_list_merged <- merge(GatingSetList(gs_list1),path="flowIncubator/output/")
+
+gs_groups <- split(GatingSetList(gs_list))
+
+gs_list_merged <- merge(GatingSetList(gs_list),path="flowIncubator/output/")
 getwd()
 gs_list_merged
 
