@@ -23,7 +23,8 @@ A \code{GatingSet} object .
 }
 }
 \details{
-Returns a flowSet containing the events defined at by boolean expression \code{y}. 
+Returns a flowSet containing the events defined at by boolean expression \code{y}.
+} 
 \value{
 
 A \code{ncdfFlowSet} or \code{flowSet}. 
