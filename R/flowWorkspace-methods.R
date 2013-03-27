@@ -33,7 +33,7 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj,y,...){
 
 #split GatingSets into groups based on their gating schemes
 #Be careful that the splitted resluts still points to the original data set!!
-setMethod("split",signature=c("GatingSetList","missing"),function(x,f,...){
+setMethod("split",signature=c("GatingSetList","missing"),function(x,f="missing",...){
 #      browser()
       node_seq <-unlist(lapply(x,function(this_gs){
                 this_gh <- this_gs[[1]]
