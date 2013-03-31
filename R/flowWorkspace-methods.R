@@ -97,8 +97,10 @@ setMethod("merge",signature=c("GatingSetList"),function(x,path = tempdir(),...){
                     this_gs
                   })
                  
-              
-              rbind2(GatingSetList(this_group_new))  
+               this_folder <- path.expand(path)
+
+              rbind2(GatingSetList(this_group_new),ncdfFile=tempfile(tmpdir=this_folder,fileext=".nc")
+)  
             }
             
           })
