@@ -116,7 +116,7 @@ setMethod("merge",signature=c("GatingSetList"),function(x,path = tempdir(),...){
 ##the old data by mistake
 ##currently not exposed to end user
 ######################################
-save_gs<-function(G,path,overwrite = FALSE){
+save_gs<-function(G,path,overwrite = FALSE,...){
 #  browser()
   
   if(file.exists(path)){
@@ -136,7 +136,7 @@ save_gs<-function(G,path,overwrite = FALSE){
   dir.create(path = path)
   #do the dir normalization again after it is created
   path <- normalizePath(path,mustWork = TRUE)
-  invisible(flowWorkspace:::.save_gs(G,path = path))
+  invisible(flowWorkspace:::.save_gs(G,path = path, ...))
   message("Done\nTo reload it, use 'load_gs' function\n")
   
   
