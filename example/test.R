@@ -7,7 +7,7 @@ library(flowIncubator)
 
 
 #getData
-gs <- flowWorkspace:::load_gs("/home/wjiang2/rglab/workspace/analysis/HVTN080/output/HVTN_small/")
+gs <- load_gs("/home/wjiang2/rglab/workspace/analysis/HVTN080/output/HVTN_small/")
 getData(gs[[1]],"4+")
 getData(gs[[1]],6)
 
@@ -25,7 +25,7 @@ getData(gs[[1]])[getIndices(gs[[1]],"TNFa+")|getIndices(gs[[1]],"IL2+"),]
 
 #split and merge
 gs_list<-lapply(list.files("flowIncubator/output/gs_toMerge",full=T),function(this_folder){
-      flowWorkspace:::load_gs(this_folder)
+      load_gs(this_folder)
     })
 
 
