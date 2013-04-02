@@ -1,5 +1,5 @@
 importMethodsFrom(flowWorkspace, getData,add,Rm,getNodes,recompute)
 importFrom(flowWorkspace,booleanFilter,GatingSetList)
 
-exportMethods("getData","split","merge")
+exportMethods("getData","merge")
 export("save_gs","load_gs")
