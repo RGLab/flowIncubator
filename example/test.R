@@ -6,8 +6,14 @@ library(flowWorkspace)
 library(flowIncubator)
 
 
+new_stats <-unlist(sapply(getNodes(gs[[1]]),function(this_node)length(which(getIndices(gs[[1]],this_node)))))[1:20]
+cbind(getPopStats(gs[[1]])[1:20,3,drop=F],new_stats)
+
 #getData
+gs <- load_gs("~/rglab/workspace/analysis/HVTN080/output/HVTNsubset1")
 gs <- load_gs("/home/wjiang2/rglab/workspace/analysis/HVTN080/output/HVTN_small/")
+x11()
+plotGate(gs[[1]],smooth=TRUE)
 getData(gs[[1]],"4+")
 getData(gs[[1]],6)
 
@@ -24,7 +30,7 @@ getData(gs[[1]])[getIndices(gs[[1]],"TNFa+")|getIndices(gs[[1]],"IL2+"),]
 
 
 #split and merge
-gs_list<-lapply(list.files("flowIncubator/output/gs_toMerge",full=T),function(this_folder){
+gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T),function(this_folder){
       load_gs(this_folder)
     })
 

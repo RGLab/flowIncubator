@@ -10,7 +10,7 @@ Save/load a GatingSetInternal which is the gated flow data including gates and p
 The \code{GatingSetInternal} object The internal C data structure (gating tree),\code{ncdfFlowSet} object(if applicable) 
 }
 \usage{
-save(G,path,overwrite = FALSE,...) 
+save_gs(G,path,overwrite = FALSE,...) 
 load_gs(path)
 }
 \arguments{
