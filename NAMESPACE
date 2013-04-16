@@ -4,5 +4,5 @@ importFrom(QUALIFIER,getQAStats)
 
 
 exportMethods("getData","merge","rbind2","show","getSamples","[[","plotGate","getQAStats","pData","getGate")
-export("save_gs","load_gs")
+export("save_gs","load_gs", GatingSetList)
 exportClasses(GatingSetList)

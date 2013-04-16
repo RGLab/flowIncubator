@@ -42,16 +42,19 @@ gslist2 <- gs_groups[[2]]
 gslist2
 class(gslist2)
 getSamples(gslist2)
+showMethods("[[",class="GatingSetList")
+
 gslist2[[1]]
 gslist2[["30104.fcs"]]
-gslist2[c(1:3)]
+getSamples(gslist2[c(1,4)])
 gslist2[c("30104.fcs")]
 getData(gslist2)
-getData(obj=gslist2,y=4)
-getGate(gslist2,"Lv")
+getData(gslist2,4)
+getGate(gslist2,"4+")
+getGate(gslist2,6)
 pData(gslist2)
-plotGate(gslist2,4)
-plotGate_labkey(gslist2,3,x=,y=)
+plotGate(gslist2,7,smooth=T)
+plotGate_labkey(gslist2,6,x="<APC Cy7-A>",y="<Alexa 680-A>",smooth=T)
 res<-getQAStats(gslist2)
 
 
