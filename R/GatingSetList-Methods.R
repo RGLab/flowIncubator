@@ -63,7 +63,7 @@ setMethod("show",
 setMethod("getSamples", 
     signature = signature(x = "GatingSetList"),
     function(x,...) {
-      unlist(lapply(x@data,getSamples))      
+      x@samples      
     })
 setMethod("lapply","GatingSetList",function(X,FUN,...){
       lapply(X@data,FUN,...)
@@ -118,7 +118,8 @@ setMethod("[",c(x="GatingSetList",i="logical"),function(x,i,j,...){
 setMethod("[",c(x="GatingSetList",i="character"),function(x,i,j,...){
 #      browser()
       samples <- getSamples(x)
-      noFound <- is.na(match(i,samples))
+      matchInd <- match(i,samples)
+      noFound <- is.na(matchInd)
       if(any(noFound)){
         stop(i(noFound), "not found in GatingSetList!")
       }
@@ -134,8 +135,9 @@ setMethod("[",c(x="GatingSetList",i="character"),function(x,i,j,...){
                   }
                 })
       res <- res[!unlist(lapply(res,is.null))]
-      GatingSetList(res)
-      
+      res <- GatingSetList(res)
+      res@samples <- samples[matchInd]
+      res
     })
 
 setMethod("getData",c(obj="GatingSetList",y="missing"),function(obj,y,...){
@@ -163,12 +165,30 @@ setMethod("getData",c(obj="GatingSetList",y="character"),function(obj, y, max=30
     })
 
 setMethod("pData","GatingSetList",function(object){
-#      browser()
+
       res <- lapply(object,function(gs){
               pData(gs)      
           })
-      do.call(rbind,res)
+#            browser()
+      res <- do.call(rbind,res)
+      res[object@samples,,drop=FALSE]
     })
+
+setReplaceMethod("pData",c("GatingSetList","data.frame"),function(object,value){
+      if(!setequal(getSamples(object),rownames(value))){
+        stop("The sample names in data.frame are not consistent with the GatingSetList!")
+      }
+        
+      res <- lapply(object,function(gs){
+                    this_pd <- subset(value,name%in%getSamples(gs))
+                    pData(gs) <- this_pd
+                    gs
+                  })
+              
+      res <- GatingSetList(res)
+      res        
+    })
+
 setMethod("getGate",signature(obj="GatingSetList",y="numeric"),function(obj,y,tsort=FALSE){
       getGate(obj,getNodes(obj[[1]])[y])
     })
@@ -189,7 +209,17 @@ setMethod("plotGate",signature(x="GatingSetList",y="numeric"),function(x,y, ...)
 
 setMethod("getQAStats",signature("GatingSetList"),function(obj,...){
       res <- lapply(obj,function(gs){
-            getQAStats(gs)      
+            
+            statsOfGS <- getQAStats(gs,...)
+            #append id to stats
+            statsOfGS <- lapply(names(statsOfGS),function(curID){
+                  curStats<-statsOfGS[[curID]]
+                  curStats$id<-as.integer(curID)
+                  curStats
+                })
+            do.call("rbind",statsOfGS)
           })
-      do.call(rbind2,res)
+      
+       do.call(rbind,res)  
+      
     })
