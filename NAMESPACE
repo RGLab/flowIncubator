@@ -1,5 +1,8 @@
-importMethodsFrom(flowWorkspace, getData,add,Rm,getNodes,recompute)
-importFrom(flowWorkspace,booleanFilter,GatingSetList)
+importMethodsFrom(flowWorkspace, getData,add,Rm,getNodes,recompute,getGate,"[[","[",getIndices,getSamples)
+importFrom(flowWorkspace,booleanFilter)
+importFrom(QUALIFIER,getQAStats)
 
-exportMethods("getData","merge")
+
+exportMethods("getData","merge","rbind2","show","getSamples","[[","plotGate","getQAStats","pData","getGate")
 export("save_gs","load_gs")
+exportClasses(GatingSetList)

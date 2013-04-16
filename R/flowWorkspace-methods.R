@@ -31,10 +31,16 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj,y,...){
       
     })
 
+##################################################
 #merge GatingSets into groups based on their gating schemes
 #Be careful that the splitted resluts still points to the original data set!!
 #drop the unused channels if needed before merging them 
-setMethod("merge",signature=c("GatingSetList"),function(x,path = tempdir(),test.run = TRUE,...){
+##########################################################
+
+#merge GatingSetList to GatingSet
+
+#from list to GatingSetList
+setMethod("merge",signature=c("list"),function(x,...){
 #      browser()
       
       message("Grouping by Gating tree...")
@@ -45,66 +51,38 @@ setMethod("merge",signature=c("GatingSetList"),function(x,path = tempdir(),test.
                 
               }))
       gs_groups <- split(x,node_seq)
-      if(test.run){
-        gs_groups
-      }else{
         
       
-        #start to merge      
-        res <- lapply(1:length(gs_groups),function(i){
-  #            browser()
-              this_group <- gs_groups[[i]]
-              if(length(this_group) == 1){
-                return(clone(this_group[[1]]))
-              }else{
-                message("merging Group:",i)
-                #drop the unused marker from fs
-                this_group_new <- lapply(this_group,function(this_gs){
-  #                    browser()
-                      this_fs <- getData(this_gs)
+      #start to merge      
+      lapply(1:length(gs_groups),function(i){
+#            browser()
+            this_group <- gs_groups[[i]]
+
+            #drop the unused marker from fs
+            if(length(this_group) > 1){
+              this_group <- lapply(this_group,function(this_gs){
+#                    browser()
+                    this_fs <- getData(this_gs)
+                    
+                    this_pd <- pData(parameters(this_fs[[1]]))
+                    non_na_channel <- unname(!is.na(this_pd[,"desc"]))
+                    to_include <- grepl(pattern="[FS]SC|[Tt]ime",this_pd[,"name"])
+                    to_include <- to_include |  non_na_channel
+                    if(length(which(to_include)) != nrow(this_pd)){
+                    
+                      message("drop empty channel:",this_pd[!to_include,1])
                       
-                      this_pd <- pData(parameters(this_fs[[1]]))
-                      non_na_channel <- unname(!is.na(this_pd[,"desc"]))
-                      to_include <- grepl(pattern="[FS]SC|[Tt]ime",this_pd[,"name"])
-                      to_include <- to_include |  non_na_channel
-                      if(length(which(to_include)) != nrow(this_pd)){
-                      
-                        message("drop empty channel:",this_pd[!to_include,1])
-                        this_folder <- path.expand(path)
-                        #      browser()
-                        this_fs <- clone.ncdfFlowSet(this_fs[,to_include]
-                            ,isEmpty = FALSE
-                            ,ncdfFile=tempfile(tmpdir=this_folder,fileext=".nc")
-                        )
-                        
-                        #only update the data environment here to avoid changing original gs data by mistake
-                        #since rbind2 is going to take care of the rest of environments
-  #                      browser()
-                        gdata<-new.env(parent=emptyenv());
-                        for(i in 1:length(this_gs@set)){
-                          nd<-this_gs@set[[i]]@tree@nodeData
-                          #local data env
-                          nd@defaults$data<-new.env(hash=TRUE, parent=emptyenv())
-                          #global data env
-                          nd@defaults$data[["data"]]<-gdata
-                          this_gs@set[[i]]@tree@nodeData<-nd
-                        }
-                        
-                        ncFlowSet(this_gs) <- this_fs
-                      }
-                      this_gs
-                    })
-                   
-                 this_folder <- path.expand(path)
-  
-                rbind2(GatingSetList(this_group_new),ncdfFile=tempfile(tmpdir=this_folder,fileext=".nc"))  
-              }
-              
-            })
+                      ncFlowSet(this_gs) <- this_fs[,to_include]
+                    
+                    }
+                    this_gs
+                  })
+            }
             
-          message("merging finished!")
-          GatingSetList(unlist(res))
-        }
+            GatingSetList(this_group)
+          })
+        
+      
     })
       
 ######################################

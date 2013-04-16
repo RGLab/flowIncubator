@@ -8,7 +8,6 @@ Maintainer: Mike Jiang <wjiang2@fhcrc.org>
 Description: This package is designed to facilitate other flow core packages.  
 License: Artistic-2.0
 LazyLoad: yes
-Depends: flowWorkspace (>= 1.5.93)
-Imports: flowWorkspace (>= 1.5.93)
-Collate: flowWorkspace-methods.R
+Imports: flowWorkspace (>= 1.5.93),QUALIFIER (>= 1.3.6)
+Collate: AllClasses.R flowWorkspace-methods.R GatingSetList-Methods.R
 biocViews: FlowCytometry, DataImport, Preprocessing, DataRepresentation

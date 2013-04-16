@@ -28,19 +28,37 @@ getData(gs[1],6)[[1]]
 getData(gs[[1]])[getIndices(gs[[1]],"TNFa+")|getIndices(gs[[1]],"IL2+"),]
 
 
-
-#split and merge
+library(flowWorkspace)
+library(flowIncubator)
+#merge
 gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T),function(this_folder){
       load_gs(this_folder)
     })
 
 
-gs_groups <- split(GatingSetList(gs_list))
+gs_groups <- merge(gs_list)
 
-gs_list_merged <- merge(GatingSetList(gs_list),path="flowIncubator/output/")
-getwd()
-gs_list_merged
+gslist2 <- gs_groups[[2]]
+gslist2
+class(gslist2)
+getSamples(gslist2)
+gslist2[[1]]
+gslist2[["30104.fcs"]]
+gslist2[c(1:3)]
+gslist2[c("30104.fcs")]
+getData(gslist2)
+getData(obj=gslist2,y=4)
+getGate(gslist2,"Lv")
+pData(gslist2)
+plotGate(gslist2,4)
+plotGate_labkey(gslist2,3,x=,y=)
+res<-getQAStats(gslist2)
 
-getData(gs_list_merged[[1]],quote(`4+/TNFa+|4+/IL2+`))[[1]]
-getData(gs_list_merged[[1]])
+
+gs_merged2 <- rbind2(gslist2,ncdfFile=path.expand(tempfile(tmpdir="~/rglab/workspace/flowIncubator/output/",fileext=".nc")))
+
+gs_merged2
+
+getData(gs_merged2[[1]],quote(`4+/TNFa+|4+/IL2+`))[[1]]
+getData(gs_merged2[[1]])
 
