@@ -223,3 +223,52 @@ setMethod("getQAStats",signature("GatingSetList"),function(obj,...){
        do.call(rbind,res)  
       
     })
+
+save_gslist<-function(gslist,path,overwrite = FALSE,...){
+    
+  if(file.exists(path)){
+    path <- normalizePath(path,mustWork = TRUE)
+    if(overwrite){
+#      browser()
+      res <- unlink(path, recursive = TRUE)
+      if(res == 1){
+        stop("failed to delete ",path)
+      }
+    }else{
+      stop(path,"' already exists!")  
+    }
+    
+  }
+  
+  dir.create(path = path)
+  #do the dir normalization again after it is created
+  path <- normalizePath(path,mustWork = TRUE)
+  lapply(gslist,function(gs){
+        this_dir <- tempfile(pattern="gs",tmpdir=path)
+        dir.create(path = this_dir)
+        invisible(flowWorkspace:::.save_gs(gs,path = this_dir, ...))      
+      })
+#  browser()
+  #save sample vector
+  saveRDS(gslist@samples,file=file.path(path,"samples.rds"))
+  message("Done\nTo reload it, use 'load_gslist' function\n")
+  
+  
+}
+
+
+load_gslist<-function(path){
+#  browser()
+  path <- normalizePath(path,mustWork = TRUE)
+  if(!file.exists(path))
+    stop(path,"' not found!")
+  dirs<-dir(path,pattern="gs",full=TRUE)
+#   browser()
+  res <- lapply(dirs,function(this_dir){
+#        browser()
+        flowWorkspace:::.load_gs(output = this_dir, files = list.files(this_dir))$gs      
+      })
+  samples <- readRDS(file.path(path,"samples.rds"))
+  GatingSetList(res, samples = samples)
+  
+}

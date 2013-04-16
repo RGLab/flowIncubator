@@ -68,6 +68,8 @@ getNodes(gslist2[[1]])
 lapply(gslist2,function(gs)Rm("Excl",gs))
 res<-getQAStats(gslist2[c(4,2)],isMFI=F,isSpike=F,nslaves=1)
 
+save_gslist(gslist2, path ="~/rglab/workspace/flowIncubator/output/gslist",overwrite=T)
+gslist_test <- load_gslist(path ="~/rglab/workspace/flowIncubator/output/gslist")
 
 gs_merged2 <- rbind2(gslist2,ncdfFile=path.expand(tempfile(tmpdir="~/rglab/workspace/flowIncubator/output/",fileext=".nc")))
 
