@@ -177,9 +177,8 @@ setMethod("pData","GatingSetList",function(object){
     })
 
 setReplaceMethod("pData",c("GatingSetList","data.frame"),function(object,value){
-      if(!setequal(getSamples(object),rownames(value))){
+      if(!.isValidSamples(rownames(value),object))
         stop("The sample names in data.frame are not consistent with the GatingSetList!")
-      }
         
       res <- lapply(object,function(gs){
                     this_pd <- subset(value,name%in%getSamples(gs))
