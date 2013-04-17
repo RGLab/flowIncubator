@@ -65,9 +65,11 @@ setMethod("getSamples",
     function(x,...) {
       x@samples      
     })
+
 setMethod("lapply","GatingSetList",function(X,FUN,...){
       lapply(X@data,FUN,...)
     })
+
 setMethod("[[",c(x="GatingSetList",i="numeric"),function(x,i,j,...){
       #convert non-character indices to character
 #      browser()
@@ -114,7 +116,7 @@ setMethod("[",c(x="GatingSetList",i="logical"),function(x,i,j,...){
       x[getSamples(x)[i]]
    
     })
-#TODO:add metaData slot to GatingSetList to maintain the sample order
+
 setMethod("[",c(x="GatingSetList",i="character"),function(x,i,j,...){
 #      browser()
       samples <- getSamples(x)
@@ -223,7 +225,10 @@ setMethod("getQAStats",signature("GatingSetList"),function(obj,...){
        do.call(rbind,res)  
       
     })
-
+setMethod("getPopStats","GatingSetList",function(x,...){
+      res <- lapply(x,getPopStats,...)
+      do.call(cbind,res)
+    })
 save_gslist<-function(gslist,path,overwrite = FALSE,...){
     
   if(file.exists(path)){

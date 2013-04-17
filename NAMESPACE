@@ -1,9 +1,25 @@
-#importMethodsFrom(flowWorkspace, getData,add,Rm,getNodes,recompute,getGate,"[[","[",getIndices,getSamples)
-#importFrom(flowWorkspace,booleanFilter)
-#importFrom(QUALIFIER,getQAStats)
+importMethodsFrom(flowWorkspace
+					,"getData"
+					,"add"
+					,"Rm"
+					,"getNodes"
+					,"recompute"
+					,"getGate"
+					,"[["
+					,"["
+					,"getIndices"
+					,"getSamples"
+					,"getPopStats"
+					,"lapply"
+					)
+importFrom(flowWorkspace,booleanFilter)
+importFrom(QUALIFIER,getQAStats)
 
 
-exportMethods("getData"
+exportClasses(GatingSetList)
+
+exportMethods("lapply"
+			 ,"getData"
 			 ,"merge"
 			 ,"rbind2"
 			 ,"show"
@@ -14,6 +30,8 @@ exportMethods("getData"
 			 ,"getQAStats"
 			 ,"pData"
 			 ,"getGate"
+			 ,"getPopStats"
 			 )
-export("save_gs","load_gs", GatingSetList)
-exportClasses(GatingSetList)
+			 
+export("save_gs","load_gs","save_gslist","load_gslist", GatingSetList)
+

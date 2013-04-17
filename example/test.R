@@ -2,7 +2,7 @@
 # 
 # Author: wjiang2
 ###############################################################################
-library(flowWorkspace)
+#library(flowWorkspace)
 library(flowIncubator)
 
 
@@ -28,9 +28,10 @@ getData(gs[1],6)[[1]]
 getData(gs[[1]])[getIndices(gs[[1]],"TNFa+")|getIndices(gs[[1]],"IL2+"),]
 
 
-showMethods("[",classes="GatingSetList")
-library(flowWorkspace)
+showMethods("lapply",classes="GatingSetList")
+
 library(flowIncubator)
+unloadNamespace("flowIncubator")
 #merge
 gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T),function(this_folder){
       load_gs(this_folder)
@@ -47,16 +48,20 @@ getSamples(gslist2)
 gslist2[[1]]
 gslist2[["30104.fcs"]]
 gslist2[1]
+
+lapply(gslist2,getSamples)
+
 getSamples(gslist2[c(4,1)])
 getSamples(gslist2[c(1,4)])
 gslist2[c("30104.fcs")]
 getData(gslist2)
 getData(gslist2,4)
-getGate(gslist2,"4+")
-getGate(gslist2,6)
+getGate(gslist2,"3+")
+getGate(gslist2,5)
 pData(gslist2[3:1])
-plotGate(gslist2[1:2],7,smooth=T)
-plotGate_labkey(gslist2[3:4],6,x="<APC Cy7-A>",y="<Alexa 680-A>",smooth=T)
+plotGate(gslist2[1:2],5,smooth=T)
+plotGate_labkey(gslist2[3:4],4,x="<APC Cy7-A>",y="<PE Tx RD-A>",smooth=T)
+
 
 
 
@@ -68,13 +73,17 @@ getNodes(gslist2[[1]])
 lapply(gslist2,function(gs)Rm("Excl",gs))
 res<-getQAStats(gslist2[c(4,2)],isMFI=F,isSpike=F,nslaves=1)
 
+
+getPopStats(gslist2)
+
+
 save_gslist(gslist2, path ="~/rglab/workspace/flowIncubator/output/gslist",overwrite=T)
-gslist_test <- load_gslist(path ="~/rglab/workspace/flowIncubator/output/gslist")
+gslist2 <- load_gslist(path ="~/rglab/workspace/flowIncubator/output/gslist")
 
 gs_merged2 <- rbind2(gslist2,ncdfFile=path.expand(tempfile(tmpdir="~/rglab/workspace/flowIncubator/output/",fileext=".nc")))
 
 gs_merged2
 
-getData(gs_merged2[[1]],quote(`4+/TNFa+|4+/IL2+`))[[1]]
+getData(gs_merged2[[1]],y=quote(`4+/TNFa+|4+/IL2+`))[[1]]
 getData(gs_merged2[[1]])
 
