@@ -161,8 +161,11 @@ setMethod("getData",c(obj="GatingSetList",y="character"),function(obj, y, max=30
                 NcdfFlowSetToFlowSet(getData(gs,y))
           })
       fs<-res[[1]]
-      for(i in 2:length(res))
-        fs<-rbind2(fs,res[[i]])
+      if(length(res)>1){
+        for(i in 2:length(res))
+          fs<-rbind2(fs,res[[i]])  
+      }
+      
       fs
     })
 

@@ -28,17 +28,17 @@ getData(gs[1],6)[[1]]
 getData(gs[[1]])[getIndices(gs[[1]],"TNFa+")|getIndices(gs[[1]],"IL2+"),]
 
 
-showMethods("lapply",classes="GatingSetList")
+showMethods("[[",classes="GatingSetList")
 
 library(flowIncubator)
-unloadNamespace("flowIncubator")
+#unloadNamespace("flowIncubator")
 
 #load several GatingSets from disk
 gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T),function(this_folder){
       load_gs(this_folder)
     })
 
-gslist2 <- GatingSetList(gs_list[c(1,6)])
+gslist2 <- GatingSetList(gs_list[c(1,4)])
 pData(ncFlowSet(gs_list[[2]]))$id=NULL
 pData(ncFlowSet(gs_list[[5]]))
 
