@@ -107,4 +107,15 @@ gslist2 <- load_gslist(path ="~/rglab/workspace/flowIncubator/output/gslist")
 gs_merged2 <- rbind2(gslist2,ncdfFile=path.expand(tempfile(tmpdir="~/rglab/workspace/flowIncubator/output/",fileext=".nc")))
 gs_merged2
 
-
+gh<-gslist2[[1]]
+getNodes(gh)
+plot(gh,5)
+plot(gh,"CD3-")
+plot(gh,"19+ 20+")
+plot(gh,"19+ 20-")
+plot(gh,"19- 20-")
+dev.off()
+g<-flowWorkspace:::.getGraph()
+plot(subGraph(nodes(g)[3:4],g))
+nodes(g)
+plot(g)
