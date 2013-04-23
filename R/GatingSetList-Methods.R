@@ -22,7 +22,7 @@ setMethod("rbind2",
         #combine tree structure
         ptrlist<-lapply(x,function(gs)gs@pointer)
         sampleList<-lapply(x,getSamples)
-        pointer<-.Call("R_combineGatingSet",ptrlist,sampleList)
+        pointer<-.Call("R_combineGatingSet",ptrlist,sampleList,package="flowWorkspace")
         G<-new("GatingSetInternal")
         G@pointer<-pointer
         

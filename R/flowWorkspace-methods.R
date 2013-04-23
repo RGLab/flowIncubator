@@ -7,17 +7,27 @@
 #example:
 # getData(gs,quote(`4+/TNFa+|4+/IL2+`))
 ###############################################################################
-setMethod("getData",signature=c("GatingSetInternal","name"),function(obj,y,...){
+setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y, mask=TRUE, ...){
       
       bf <- eval(substitute(booleanFilter(v),list(v=y)))
-      
+      browser()
+      gh <- obj[[1]]
+      allNodes <- getNodes(gh)
       suppressMessages({
             id <- add(obj,bf)
-            this_node <- getNodes(obj[[1]])[id]
+            this_node <- allNodes[id]
             res <-try(recompute(obj,id),silent=T)
           })
       
-      
+      if(mask){
+        strExpr <- as.character(y)
+        nodes <- strsplit(strExpr,split="\\|")[[1]]
+        
+        #extract logical indices for each cytokine gate
+        indice_list <- lapply(nodes,function(this_node){
+              this_indices <- getIndices(gh,this_node)
+            })
+      }
       if(class(res)=="try-error"){
         Rm(this_node,obj)
         stop(res)
@@ -30,7 +40,7 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj,y,...){
       
       
     })
-
+  
 ##################################################
 #merge GatingSets into groups based on their gating schemes
 #Be careful that the splitted resluts still points to the original data set!!
@@ -182,8 +192,6 @@ setMethod("plot",c("GatingHierarchyInternal","numeric"),function(x,y,...){
 
 setMethod("plot",c("GatingHierarchyInternal","character"),function(x,y,...){
       
-#           browser()
-      y <- match(y,getNodes(x))
-      plot(x,y)
+      plot(x,flowWorkspace:::.getNodeInd(x,y))
       
     })

@@ -34,15 +34,26 @@ library(flowIncubator)
 #unloadNamespace("flowIncubator")
 
 #load several GatingSets from disk
-gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T),function(this_folder){
+gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T)[1]
+              ,function(this_folder){
       load_gs(this_folder)
     })
-
+plot(gs_list[[1]][[1]])
 gslist2 <- GatingSetList(gs_list[c(1,4)])
 pData(ncFlowSet(gs_list[[2]]))$id=NULL
 pData(ncFlowSet(gs_list[[5]]))
 
-
+gh<-gs_list[[1]][[1]]
+getPopStats(gh)[,2:3]
+setNode(gs_list[[1]],6,"time")
+this_g <- getGate(gh,6)
+str(this_g)
+this_g@boundaries[,1] <- this_g@boundaries[,1] *100 
+setGate(gh,6,this_g,negated=T)
+recompute(gs_list[[1]])
+x11()
+plotGate(gh,6,xbin=64,xlim=c(-1000,10000))
+xyplot(`<Pacific Blue-A>`~`Time`,getData(gh),filter=getGate(gh,6),smooth=F,xlim=c(-1000,10000))
 #gs_list is a list
 gs_groups <- merge(gs_list)
 #returns a list of GatingSetList objects
@@ -119,3 +130,26 @@ g<-flowWorkspace:::.getGraph()
 plot(subGraph(nodes(g)[3:4],g))
 nodes(g)
 plot(g)
+
+
+gh<-gs_list[[1]][[1]]
+
+g<-getGate(gh,"Excl")
+g@boundaries[,1]<-g@boundaries[,1]*100
+
+str(getGate(gh,"Excl"))
+
+xyplot(`<Pacific Blue-A>`~Time,getData(gh,"3+")
+,filter=g
+,xlim=c(-1000,10000)
+,smooth=F
+,overlay=getData(gh,"IFNg+")
+)
+getNodes(gh)
+range(exprs(getData(gh,"3+"))[,1])
+
+
+load("/loc/no-backup/ramey/Lyoplate3-fs_list.RData")
+list1 <- lapply(fs_list,GatingSet)
+gslist <- GatingSetList(list1)
+gs <- rbind2(gslist1)
