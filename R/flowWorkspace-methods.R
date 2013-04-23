@@ -47,10 +47,9 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y, mas
 #drop the unused channels if needed before merging them 
 ##########################################################
 
-#merge GatingSetList to GatingSet
 
 #from list to GatingSetList
-setMethod("merge",signature=c("list"),function(x,...){
+merge_gs<-function(x,...){
 #      browser()
       
       message("Grouping by Gating tree...")
@@ -93,7 +92,7 @@ setMethod("merge",signature=c("list"),function(x,...){
           })
         
       
-    })
+    }
       
 ######################################
 ##archive/unarchive to/from a folder 

@@ -34,7 +34,7 @@ library(flowIncubator)
 #unloadNamespace("flowIncubator")
 
 #load several GatingSets from disk
-gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T)[1]
+gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T)
               ,function(this_folder){
       load_gs(this_folder)
     })
@@ -55,7 +55,7 @@ x11()
 plotGate(gh,6,xbin=64,xlim=c(-1000,10000))
 xyplot(`<Pacific Blue-A>`~`Time`,getData(gh),filter=getGate(gh,6),smooth=F,xlim=c(-1000,10000))
 #gs_list is a list
-gs_groups <- merge(gs_list)
+gs_groups <- merge_gs(gs_list)
 #returns a list of GatingSetList objects
 gslist2 <- gs_groups[[2]]
 #gslist2 is a GatingSetList that contains multiple GatingSets and they share the same gating and data structure

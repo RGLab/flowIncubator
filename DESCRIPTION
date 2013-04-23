@@ -1,7 +1,7 @@
 Package: flowIncubator
 Type: Package
 Title: Routines that don't belong to the core flow packages yet. 
-Version: 0.99.1
+Version: 0.99.2
 Date: 2013-03-26
 Author: Mike Jiang
 Maintainer: Mike Jiang <wjiang2@fhcrc.org>

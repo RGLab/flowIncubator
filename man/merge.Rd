@@ -1,7 +1,5 @@
-\name{merge}
-\alias{merge}
-\alias{merge-methods}
-\alias{merge,list-method}
+\name{merge_gs}
+\alias{merge_gs}
 
 
 \title{
@@ -11,7 +9,7 @@ cluster/merge GatingSets based on the gating tree structures.
 merge GatingSets based on the gating tree structures.
 }
 \usage{
-\S4method{merge}{list}(x, ...)
+merge_gs(x, ...)
 
 
 }
@@ -50,7 +48,7 @@ Mike Jiang \email{wjiang2@fhcrc.org}
       flowWorkspace:::load_gs(this_folder)
     })
     
-	gs_list <- merge(gs_list)
+	gs_list <- merge_gs(gs_list)
 	gs_list
 	
 }
