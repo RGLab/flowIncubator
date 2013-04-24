@@ -11,7 +11,7 @@ cbind(getPopStats(gs[[1]])[1:20,3,drop=F],new_stats)
 
 #getData
 gs <- load_gs("~/rglab/workspace/analysis/HVTN080/output/HVTNsubset")
-gs <- load_gs("/home/wjiang2/rglab/workspace/analysis/HVTN080/output/HVTN_small/")
+
 x11()
 plotGate(gs[[1]],smooth=TRUE)
 getData(gs[[1]],"4+")

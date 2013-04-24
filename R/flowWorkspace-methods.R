@@ -7,10 +7,10 @@
 #example:
 # getData(gs,quote(`4+/TNFa+|4+/IL2+`))
 ###############################################################################
-setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y, mask=TRUE, ...){
+setMethod("getIndices",signature=c("GatingSetInternal","name"),function(obj, y, ...){
       
       bf <- eval(substitute(booleanFilter(v),list(v=y)))
-      browser()
+#      browser()
       gh <- obj[[1]]
       allNodes <- getNodes(gh)
       suppressMessages({
@@ -19,28 +19,26 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y, mas
             res <-try(recompute(obj,id),silent=T)
           })
       
-      if(mask){
-        strExpr <- as.character(y)
-        nodes <- strsplit(strExpr,split="\\|")[[1]]
-        
-        #extract logical indices for each cytokine gate
-        indice_list <- lapply(nodes,function(this_node){
-              this_indices <- getIndices(gh,this_node)
-            })
-      }
       if(class(res)=="try-error"){
         Rm(this_node,obj)
         stop(res)
       }else{
-        this_data <- getData(obj,this_node)
+        this_ind <- getIndices(obj,this_node)
         Rm(this_node,obj)
-        this_data  
+        this_ind  
       }
       
-      
-      
-    })
+   })
+
+getIndiceMat<-function(gh,y){
+  strExpr <- as.character(y)
+  nodes <- strsplit(strExpr,split="\\|")[[1]]
   
+  #extract logical indices for each cytokine gate
+  indice_list <- sapply(nodes,function(this_node)getIndices(gh,this_node),simplify = FALSE)
+  #construct the indice matrix
+  do.call(cbind,indice_list)
+}  
 ##################################################
 #merge GatingSets into groups based on their gating schemes
 #Be careful that the splitted resluts still points to the original data set!!

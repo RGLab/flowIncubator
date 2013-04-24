@@ -5,27 +5,35 @@ setClass("GatingSetList"
             ,samples="character" #this determine the order of samples exposed to user
           )
           ,validity=function(object){
+            
+            gs_list <- object@data
             #check overlapping samples
-            gs_samples <- unlist(lapply(object,getSamples))
+            gs_samples <- unlist(lapply(gs_list,getSamples))
             if(any(duplicated(gs_samples))){
               return ("There are overlapping samples across GatingSets!")
             }
-#            browser()
-            gs_list <- object@data
+            
+            
             gs1 <- gs_list[[1]]
             
             #compare GatingSets
+            
             res <- sapply(gs_list[-1],function(this_gs){
+                  
                   .compareGatingSet(this_gs,gs1)
                 })
+            
+            
             is_error <- sapply(res,function(this_res){
                             class(this_res) == "character"
                           })
+#            browser()
             if(any(is_error)){
-              return (res[is_error][1])
+              this_error_ind <- which(is_error)[1]
+              return (paste("GatingSet 1 and",this_error_ind+1,":",res[this_error_ind]))
             }
             #check sample vector
-            if(!.isValidSamples(object@samples,object)){
+            if(!.isValidSamples(object@samples,gs_list)){
               return ("'samples' slot is not consisitent with sample names from GatingSets!")
             }          
             return (TRUE)
@@ -44,8 +52,13 @@ setClass("GatingSetList"
   }
 }
 .compareFlowData<-function(fs1,fs2){
-  if(!identical(colnames(fs1),colnames(fs2))){
-    return ("colnames of flowSets don't match!")
+  col1 <- colnames(fs1)
+  col2 <- colnames(fs2)
+  if(!identical(col1,col2)){
+#    sCol1 <- paste(col1,collapse=" ")
+#    sCol2 <- paste(col2,collapse=" ")
+    msg <- paste("colnames of flowSets don't match!")
+    return (msg)
   }
   if(!identical(colnames(pData(fs1)),colnames(pData(fs2)))){
     return ("pData of flow data doesn't match!")
