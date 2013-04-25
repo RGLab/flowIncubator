@@ -6,19 +6,41 @@
 library(flowIncubator)
 
 
-new_stats <-unlist(sapply(getNodes(gs[[1]]),function(this_node)length(which(getIndices(gs[[1]],this_node)))))[1:20]
-cbind(getPopStats(gs[[1]])[1:20,3,drop=F],new_stats)
+#new_stats <-unlist(sapply(getNodes(gs[[1]]),function(this_node)length(which(getIndices(gs[[1]],this_node)))))[1:20]
+#cbind(getPopStats(gs[[1]])[1:20,3,drop=F],new_stats)
 
 #getData
 gs <- load_gs("~/rglab/workspace/analysis/HVTN080/output/HVTNsubset")
-
+gh <- gs[[1]]
 x11()
-plotGate(gs[[1]],smooth=TRUE)
+plotGate(gs[[1]],"4+/IL2+")
 getData(gs[[1]],"4+")
 getData(gs[[1]],6)
+getNodes(gh)
+Rm("4+:TNFa+|4+:IL2+",gh)
+getNodes(gh,147)
+setNode(gh,147,"d/test")
+getProp(gh,"4+") 
+getProp(gh,"TNFa+") #refer to 4+/TNFa+
+getProp(gh,"144.TNFa+") #refer to 8+/TNFa+
 
+getProp(gh,"3+/4+") 
+getProp(gh,"4+/TNFa+")
+getProp(gh,"8+/TNFa+")
+
+getProp(gh,"4+/IFNg+")
+getProp(gh,"Not 4+/IFNg+")
+getProp(gh,"\\IFNg+")
+Rm("3+/4+",gs)
 getData(gs[1])
-res <- getData(gs[1],quote(`4+/TNFa+|4+/IL2+`))
+res_ind <- getIndices(gs[1],quote(`4+/TNFa+|4+/IL2+`))
+indMat <- getIndiceMat(gs[[1]],quote(`4+/TNFa+|4+/IL2+|/4+/IFNg+`))
+res <- getData(gs,quote(`4+/TNFa+|4+/IL2+|/4+/IFNg+`))
+
+
+
+plot(gh)
+getNodes(gh)
 res[[1]]
 
 getNodes(gs[[1]])
@@ -39,7 +61,7 @@ gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",f
       load_gs(this_folder)
     })
 plot(gs_list[[1]][[1]])
-gslist2 <- GatingSetList(gs_list[c(1,4)])
+gslist2 <- GatingSetList(gs_list[c(1,3)])
 pData(ncFlowSet(gs_list[[2]]))$id=NULL
 pData(ncFlowSet(gs_list[[5]]))
 
@@ -153,3 +175,11 @@ load("/loc/no-backup/ramey/Lyoplate3-fs_list.RData")
 list1 <- lapply(fs_list,GatingSet)
 gslist <- GatingSetList(list1)
 gs <- rbind2(gslist1)
+
+
+#
+gs_list <- lapply(list.dirs("/home/gfinak/RV144reanalysis/RV144/",recur=F)[1:2],load_gs)
+gslist <- GatingSetList(gs_list)
+colnames(getData(gs_list[[1]])[[1]])
+colnames(getData(gs_list[[2]])[[1]])
+gslist <- merge_gs(gs_list)
