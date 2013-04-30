@@ -11,6 +11,10 @@ library(flowIncubator)
 
 #getData
 gs <- load_gs("~/rglab/workspace/analysis/HVTN080/output/HVTNsubset")
+
+save_gs(gs,"~/rglab/workspace/flowIncubator/output/test", overwrite=T, save.cdf =T)
+gs <- load_gs("~/rglab/workspace/flowIncubator/output/test")
+
 gh <- gs[[1]]
 x11()
 plotGate(gs[[1]],"4+/IL2+")
@@ -60,7 +64,7 @@ library(flowIncubator)
 #unloadNamespace("flowIncubator")
 
 #load several GatingSets from disk
-gs_list<-lapply(list.files("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T)
+gs_list<-lapply(list.dirs("~/rglab/workspace/flowIncubator/output/gs_toMerge",full=T,recur=F)
               ,function(this_folder){
       load_gs(this_folder)
     })
@@ -83,7 +87,7 @@ xyplot(`<Pacific Blue-A>`~`Time`,getData(gh),filter=getGate(gh,6),smooth=F,xlim=
 #gs_list is a list
 gs_groups <- merge_gs(gs_list)
 #returns a list of GatingSetList objects
-gslist2 <- gs_groups[[2]]
+gslist2 <- gs_groups[[1]]
 #gslist2 is a GatingSetList that contains multiple GatingSets and they share the same gating and data structure
 gslist2
 class(gslist2)
@@ -182,7 +186,7 @@ gs <- rbind2(gslist1)
 
 
 #
-gs_list <- lapply(list.dirs("/home/gfinak/RV144reanalysis/RV144/",recur=F)[1:2],load_gs)
+gs_list <- lapply(list.dirs("/home/gfinak/RV144reanalysis/RV144/",recur=F)[1:3],load_gs)
 gslist <- GatingSetList(gs_list)
 colnames(getData(gs_list[[1]])[[1]])
 colnames(getData(gs_list[[2]])[[1]])

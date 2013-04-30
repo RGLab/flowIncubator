@@ -169,49 +169,63 @@ merge_gs<-function(x,...){
 ######################################
 save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
 #  browser()
+  guid <- gs@guid
+  rds_toSave <- paste(guid,"rds",sep=".")
+  dat_toSave <- paste(guid,"dat",sep=".")
   
   if(file.exists(path)){
     path <- normalizePath(path,mustWork = TRUE)
     if(overwrite){
-#      browser()
-      
-      #validity check of the existing folder
       this_files <- list.files(path)
-      rds_ind <- grep("\\.rds$",this_files)
-      dat_ind <- grep("\\.dat$",this_files) 
-      if(length(rds_ind)!=1||length(dat_ind)!=1){
-        stop("Not a valid archiving folder!")
-      }
-      
-      if(flowWorkspace:::isNcdf(G[[1]])){
-        cdf_ind <- grep("\\.nc$",this_files)
-        if(length(cdf_ind) == 1){
-          this_cdf <- this_files[cdf_ind]
-          if(normalizePath(getData(G)@file) != file.path(path,this_cdf)){
-            stop("cdf file in path: '", path, "' is not the same as in GatingSet!")
-          }
+      #validity check for non-empty folder
+      if(length(this_files)!=0)
+      {
+        rds_ind <- grep("\\.rds$",this_files)
+        dat_ind <- grep("\\.dat$",this_files)
+        
+        if(length(rds_ind)!=1||length(dat_ind)!=1){
+          stop("Not a valid GatingSet archiving folder!")
         }else{
-          stop("Not a valid archiving folder!")
+          this_rds <- this_files[rds_ind]
+          this_dat <- this_files[dat_ind]
+          
+          if(this_rds!=rds_toSave||this_dat!=dat_toSave){
+            stop("The GatingSet doesn't match the archived files in: ", path)
+          }
         }
       }
       
-      
-      #start to delete the old files in path
-      file.remove(file.path(path,this_files[rds_ind]))
-      file.remove(file.path(path,this_files[dat_ind]))
-      
+      #validity check for cdf
+      if(flowWorkspace:::isNcdf(G[[1]])){
+        if(length(this_files)!=0){
+          cdf_ind <- grep("\\.nc$",this_files)
+          if(length(cdf_ind) != 1){
+            stop("Not a valid GatingSet archiving folder!")
+          }  
+        }
+        
+      }
+      if(length(this_files)!=0)
+      {
+        #start to delete the old files in path
+        file.remove(file.path(path,rds_toSave))
+        file.remove(file.path(path,dat_toSave))
+        if(flowWorkspace:::isNcdf(G[[1]])&&save.cdf){
+          file.remove(file.path(path,this_files[cdf_ind]))
+        }
+      }
       
     }else{
       stop(path,"' already exists!")  
     }
-    save.cdf <- FALSE #always skip saving cdf for overwriting mode
+    
   }else{
     dir.create(path = path)
     #do the dir normalization again after it is created
     path <- normalizePath(path,mustWork = TRUE)
     
   }
-  
+#  browser()
   invisible(flowWorkspace:::.save_gs(G,path = path, copy.cdf = save.cdf, ...))
   message("Done\nTo reload it, use 'load_gs' function\n")
   
@@ -226,8 +240,13 @@ load_gs<-function(path){
     stop(path,"' not found!")
   files<-list.files(path)
 #   browser()
-  flowWorkspace:::.load_gs(output = path, files = files)$gs
-  
+  gs <- flowWorkspace:::.load_gs(output = path, files = files)$gs
+  guid <- try(slot(gs,"guid"),silent=T)
+  if(class(guid)=="try-error"){
+    #generate the guid for the old archive
+    gs@guid <- system("uuidgen",intern = TRUE)
+  }
+  gs
 }
 
 .getAllDescendants <- function(gh,startNode,nodelist){
