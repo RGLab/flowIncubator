@@ -14,10 +14,14 @@ gs <- load_gs("~/rglab/workspace/analysis/HVTN080/output/HVTNsubset")
 gh <- gs[[1]]
 x11()
 plotGate(gs[[1]],"4+/IL2+")
+g <- getGate(gs[[1]],"4+/IL2+")
+g@boundaries[c(1,4),1] <- c(2.8,2.8)
+setGate(gs[[1]],"4+/IL2+",g)
 getData(gs[[1]],"4+")
 getData(gs[[1]],6)
+
 getNodes(gh)
-Rm("4+:TNFa+|4+:IL2+",gh)
+
 getNodes(gh,147)
 setNode(gh,147,"d/test")
 getProp(gh,"4+") 
@@ -26,16 +30,16 @@ getProp(gh,"144.TNFa+") #refer to 8+/TNFa+
 
 getProp(gh,"3+/4+") 
 getProp(gh,"4+/TNFa+")
-getProp(gh,"8+/TNFa+")
+getProp(gh,"8+/TNFa+") #TODO:find the first match of starting node
 
 getProp(gh,"4+/IFNg+")
 getProp(gh,"Not 4+/IFNg+")
-getProp(gh,"\\IFNg+")
+
 Rm("3+/4+",gs)
 getData(gs[1])
 res_ind <- getIndices(gs[1],quote(`4+/TNFa+|4+/IL2+`))
 indMat <- getIndiceMat(gs[[1]],quote(`4+/TNFa+|4+/IL2+|/4+/IFNg+`))
-res <- getData(gs,quote(`4+/TNFa+|4+/IL2+|/4+/IFNg+`))
+res <- getData(gslist[1:10],quote(`4+/TNFa+|4+/IL2+|/4+/IFNg+`))
 
 
 

@@ -167,27 +167,52 @@ merge_gs<-function(x,...){
 ##the old data by mistake
 ##currently not exposed to end user
 ######################################
-save_gs<-function(G,path,overwrite = FALSE,...){
+save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
 #  browser()
   
   if(file.exists(path)){
     path <- normalizePath(path,mustWork = TRUE)
     if(overwrite){
 #      browser()
-      res <- unlink(path, recursive = TRUE)
-      if(res == 1){
-        stop("failed to delete ",path)
+      
+      #validity check of the existing folder
+      this_files <- list.files(path)
+      rds_ind <- grep("\\.rds$",this_files)
+      dat_ind <- grep("\\.dat$",this_files) 
+      if(length(rds_ind)!=1||length(dat_ind)!=1){
+        stop("Not a valid archiving folder!")
       }
+      
+      if(flowWorkspace:::isNcdf(G[[1]])){
+        cdf_ind <- grep("\\.nc$",this_files)
+        if(length(cdf_ind) == 1){
+          this_cdf <- this_files[cdf_ind]
+          if(normalizePath(getData(G)@file) != file.path(path,this_cdf)){
+            stop("cdf file in path: '", path, "' is not the same as in GatingSet!")
+          }
+        }else{
+          stop("Not a valid archiving folder!")
+        }
+      }
+      
+      
+      #start to delete the old files in path
+      file.remove(file.path(path,this_files[rds_ind]))
+      file.remove(file.path(path,this_files[dat_ind]))
+      
+      
     }else{
       stop(path,"' already exists!")  
     }
+    save.cdf <- FALSE #always skip saving cdf for overwriting mode
+  }else{
+    dir.create(path = path)
+    #do the dir normalization again after it is created
+    path <- normalizePath(path,mustWork = TRUE)
     
   }
   
-  dir.create(path = path)
-  #do the dir normalization again after it is created
-  path <- normalizePath(path,mustWork = TRUE)
-  invisible(flowWorkspace:::.save_gs(G,path = path, ...))
+  invisible(flowWorkspace:::.save_gs(G,path = path, copy.cdf = save.cdf, ...))
   message("Done\nTo reload it, use 'load_gs' function\n")
   
   

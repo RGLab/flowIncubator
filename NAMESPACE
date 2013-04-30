@@ -20,6 +20,7 @@ exportClasses(GatingSetList)
 
 exportMethods("lapply"
 			 ,"getData"
+			 ,getIndices
 			 ,"rbind2"
 			 ,"show"
 			 ,"getSamples"
@@ -32,5 +33,5 @@ exportMethods("lapply"
 			 ,"getPopStats"
 			 )
 			 
-export("save_gs","load_gs","save_gslist","load_gslist", GatingSetList, merge_gs)
+export("save_gs","load_gs","save_gslist","load_gslist", GatingSetList, merge_gs, getIndiceMat)
 
