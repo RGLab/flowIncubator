@@ -171,18 +171,15 @@ setMethod("getData",c(obj="GatingSetList",y="character"),function(obj, y, max=30
 setMethod("getData",signature=c("GatingSetList","name"),function(obj, y, pop_marker_list = list(), ...){
       pop_chnl<- .getPopChnlMapping(obj[[1]],y,pop_marker_list)
 #      browser()
-     res<- lapply(obj,function(this_gs){
-            lapply(this_gs,function(gh){
-                  
-                
+      sapply(getSamples(obj),function(this_sample){
+            gh <- obj[[this_sample]]       
             #get mask mat
 #      browser()
-            this_sample <- getSample(gh)
             this_pops <-  as.character(pop_chnl[,"pop"])
             this_mat <- getIndiceMat(gh,y)[,this_pops]
             #get indices of bool gates 
             this_ind <- this_mat[,1]
-            for(i in ncol(this_mat[,-1,drop=FALSE])){
+            for(i in 2:ncol(this_mat)){
                     
               this_ind <- this_ind |this_mat[,i]
                       
@@ -198,8 +195,7 @@ setMethod("getData",signature=c("GatingSetList","name"),function(obj, y, pop_mar
             colnames(this_subset) <- pop_chnl[,"desc"]
             this_subset
           })  
-    })
-  unlist(res,recur=FALSE)
+  
   })
 
 setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...){

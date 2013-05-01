@@ -89,10 +89,14 @@ getIndiceMat<-function(gh,y){
           
         res
       }, USE.NAMES=FALSE)
-      
-  #get mapping
+#  browser()   
+  pop_matched <- is_matched[is_matched]
+  if(length(pop_matched)!=length(popNames)){
+    stop("No markers in flow data matches ", "Populations:", paste(popNames[!popNames%in%names(pop_matched)],collapse="; "))
+    
+  }
+    
   cbind(pop=names(is_matched[is_matched]),this_pd[is_matched,c("name","desc")])
-  
   
   
   
@@ -106,7 +110,7 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
 #      browser()
             this_sample <- getSample(gh)
             this_ind <-  bool_inds[[this_sample]]
-            this_pops <-  pop_chnl[,"pop"]
+            this_pops <-  as.character(pop_chnl[,"pop"])
             this_mat <- getIndiceMat(gh,y)[this_ind,this_pops]
             #subset data by channels selected
             this_chnls <- pop_chnl[,"name"]
