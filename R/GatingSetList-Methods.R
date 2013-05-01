@@ -179,7 +179,7 @@ setMethod("getData",signature=c("GatingSetList","name"),function(obj, y, pop_mar
             #get mask mat
 #      browser()
             
-            this_mat <- getIndiceMat(gh,y)[,this_pops]
+            this_mat <- getIndiceMat(gh,y)[,this_pops, drop=FALSE]
             #get indices of bool gates 
             this_ind <- this_mat[,1]
             for(i in 2:ncol(this_mat)){
@@ -190,11 +190,11 @@ setMethod("getData",signature=c("GatingSetList","name"),function(obj, y, pop_mar
             if(sum(this_ind)==0){
               NULL
             }else{
-              this_mat <- this_mat[this_ind,]
+              this_mat <- this_mat[this_ind,,drop = FALSE]
               #subset data by channels selected
               
               this_data <- getData(gh)
-              this_subset <- exprs(this_data)[this_ind,this_chnls] 
+              this_subset <- exprs(this_data)[this_ind,this_chnls, drop=FALSE] 
               #masking the data
               this_subset <- this_subset *  this_mat
               colnames(this_subset) <- pop_chnl[,"desc"]

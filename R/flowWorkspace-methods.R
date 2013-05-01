@@ -105,7 +105,7 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
       #get ind of bool gate
       bool_inds <- getIndices(obj,y,...)
       pop_chnl<- .getPopChnlMapping(obj[[1]],y,pop_marker_list)
-      this_chnls <- pop_chnl[,"name"]
+      this_chnls <- as.character(pop_chnl[,"name"])
       this_pops <-  as.character(pop_chnl[,"pop"])
       
       lapply(obj,function(gh){
@@ -120,11 +120,11 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
               NULL
             }else{
               
-              this_mat <- getIndiceMat(gh,y)[this_ind,this_pops]
+              this_mat <- getIndiceMat(gh,y)[this_ind,this_pops, drop=FALSE]
               #subset data by channels selected
               
               this_data <- getData(gh)
-              this_subset <- exprs(this_data)[this_ind,this_chnls] 
+              this_subset <- exprs(this_data)[this_ind,this_chnls, drop=FALSE] 
               #masking the data
               this_subset <- this_subset *  this_mat
               colnames(this_subset) <- pop_chnl[,"desc"]
