@@ -43,7 +43,7 @@ Rm("3+/4+",gs)
 getData(gs[1])
 res_ind <- getIndices(gs[1],quote(`4+/TNFa+|4+/IL2+`))
 indMat <- getIndiceMat(gs[[1]],quote(`4+/TNFa+|4+/IL2+|/4+/IFNg+`))
-res <- getData(gslist[1:10],quote(`4+/TNFa+|4+/IL2+|/4+/IFNg+`))
+res <- getData(gs[1],quote(`4+/TNFa+|4+/IL2+|/4+/IFNg+`))
 
 
 

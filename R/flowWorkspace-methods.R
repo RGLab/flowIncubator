@@ -45,49 +45,62 @@ getIndiceMat<-function(gh,y){
   #construct the indice matrix
   do.call(cbind,indice_list)
 }
-
-setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,...){
+#########################################
+#create mapping between pops and channels
+##########################################
+.getPopChnlMapping<-function(gh, y, pop_marker_list){
+#  browser()
+  #get pop names
+  strExpr <- as.character(y)
+  popNames <- strsplit(strExpr,split="\\|")[[1]]
+  
+  #parse the markers of interest from pop names
+  markers_selected <- sapply(popNames,function(this_pop){
+        this_pops <- strsplit(split="/",this_pop)[[1]]
+        #get the terminal node
+        term_pop <- this_pops[length(this_pops)]
+        term_pop
+      },USE.NAMES=FALSE)
+  
+  #match to the pdata of flow frame
+  fr <- getData(gh)
+  this_pd <- pData(parameters(fr))
+  all_markers <- this_pd[,"desc"]
+  all_markers <- as.character(all_markers)
+  all_markers[is.na(all_markers)] <- "NA"
+  is_matched <- sapply(all_markers,function(this_marker){
+        
+        ##using the marker name provided by arguments by default
+        is_manual_provided <- grep(this_marker,pop_marker_list)
+        if(length(is_manual_provided)>0){
+          res <- TRUE
+          names(res) <-names(pop_marker_list)[is_manual_provided] 
+        }else{
+          this_matched <- grep(pattern = this_marker, x=markers_selected, fixed=TRUE)
+          if(length(this_matched)>1){
+            stop("multiple populations mached to:", this_marker)
+          }else if(length(this_matched)==0){
+            res <- FALSE
+          }else{
+            res <- TRUE
+            names(res) <- popNames[this_matched]
+          }  
+        }        
+          
+        res
+      }, USE.NAMES=FALSE)
+      
+  #get mapping
+  cbind(pop=names(is_matched[is_matched]),this_pd[is_matched,c("name","desc")])
+  
+  
+  
+  
+}
+setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_marker_list = list(),...){
       #get ind of bool gate
       bool_inds <- getIndices(obj,y,...)
-      
-      #########################################
-      #create mapping between pops and channels
-      ##########################################
-      #get pop names
-      strExpr <- as.character(y)
-      popNames <- strsplit(strExpr,split="\\|")[[1]]
-      
-      #parse the markers of interest from pop names
-      markers_selected <- sapply(popNames,function(this_pop){
-            this_pops <- strsplit(split="/",this_pop)[[1]]
-            #get the terminal node
-            term_pop <- this_pops[length(this_pops)]
-            term_pop
-          },USE.NAMES=FALSE)
-      
-      #match to the pdata of flow frame
-      fr <- getData(obj[[1]])
-      this_pd <- pData(parameters(fr))
-      all_markers <- this_pd[,"desc"]
-      all_markers <- as.character(all_markers)
-      all_markers[is.na(all_markers)] <- "NA"
-      is_matched <- sapply(all_markers,function(this_marker){
-            this_matched <- grep(pattern = this_marker, x=markers_selected, fixed=TRUE)
-            if(length(this_matched)>1){
-              stop("multiple populations mached to:", this_marker)
-            }else if(length(this_matched)==0){
-              res <- FALSE
-            }else{
-              res <- TRUE
-              names(res) <- popNames[this_matched]
-            }
-            res
-          }, USE.NAMES=FALSE)
-#      browser()
-      #get mapping
-      pop_chnl <- cbind(pop=names(is_matched[is_matched]),this_pd[is_matched,c("name","desc")])
-      
-      
+      pop_chnl<- .getPopChnlMapping(obj[[1]],y,pop_marker_list)
       lapply(obj,function(gh){
             #get mask mat
 #      browser()
@@ -103,8 +116,7 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,...)
             this_subset <- this_subset *  this_mat
             colnames(this_subset) <- pop_chnl[,"desc"]
             this_subset
-          })
-      
+          })     
     })
       
 ##################################################
@@ -210,8 +222,17 @@ save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
         #start to delete the old files in path
         file.remove(file.path(path,rds_toSave))
         file.remove(file.path(path,dat_toSave))
-        if(flowWorkspace:::isNcdf(G[[1]])&&save.cdf){
-          file.remove(file.path(path,this_files[cdf_ind]))
+        
+        if(flowWorkspace:::isNcdf(G[[1]])){
+          #check if the target path is the same as current cdf path
+#            browser()
+            this_cdf <- file.path(path,this_files[cdf_ind])
+            if(normalizePath(getData(G)@file)==this_cdf){
+              save.cdf <- FALSE
+            }
+            if(save.cdf){
+              file.remove(this_cdf)
+             }
         }
       }
       
