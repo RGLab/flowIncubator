@@ -196,6 +196,10 @@ merge_gs<-function(x,...){
 save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
 #  browser()
   guid <- G@guid
+  if(length(guid)==0){
+    G@guid <- system("uuidgen",intern = TRUE)
+    guid <- G@guid
+  }
   rds_toSave <- paste(guid,"rds",sep=".")
   dat_toSave <- paste(guid,"dat",sep=".")
   
