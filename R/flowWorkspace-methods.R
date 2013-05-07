@@ -195,7 +195,7 @@ merge_gs<-function(x,...){
 ######################################
 save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
 #  browser()
-  guid <- gs@guid
+  guid <- G@guid
   rds_toSave <- paste(guid,"rds",sep=".")
   dat_toSave <- paste(guid,"dat",sep=".")
   
