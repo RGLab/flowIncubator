@@ -265,7 +265,7 @@ save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
     
   }
 #  browser()
-  invisible(flowWorkspace:::.save_gs(G,path = path, copy.cdf = save.cdf, ...))
+  invisible(flowWorkspace:::.save_gs(G,path = path, save.cdf = save.cdf, ...))
   message("Done\nTo reload it, use 'load_gs' function\n")
   
   
