@@ -197,7 +197,7 @@ save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
 #  browser()
   guid <- G@guid
   if(length(guid)==0){
-    G@guid <- system("uuidgen",intern = TRUE)
+    G@guid <- flowWorkspace:::.uuid_gen()
     guid <- G@guid
   }
   rds_toSave <- paste(guid,"rds",sep=".")
@@ -265,7 +265,7 @@ save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
     
   }
 #  browser()
-  invisible(flowWorkspace:::.save_gs(G,path = path, save.cdf = save.cdf, ...))
+  invisible(flowWorkspace:::.save_gs(G=G,path = path, save.cdf = save.cdf, ...))
   message("Done\nTo reload it, use 'load_gs' function\n")
   
   
@@ -279,13 +279,8 @@ load_gs<-function(path){
     stop(path,"' not found!")
   files<-list.files(path)
 #   browser()
-  gs <- flowWorkspace:::.load_gs(output = path, files = files)$gs
-  guid <- try(slot(gs,"guid"),silent=T)
-  if(class(guid)=="try-error"){
-    #generate the guid for the old archive
-    gs@guid <- system("uuidgen",intern = TRUE)
-  }
-  gs
+  flowWorkspace:::.load_gs(output = path, files = files)$gs
+  
 }
 
 .getAllDescendants <- function(gh,startNode,nodelist){

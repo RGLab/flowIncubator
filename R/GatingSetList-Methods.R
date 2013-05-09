@@ -25,6 +25,7 @@ setMethod("rbind2",
         pointer<-.Call("R_combineGatingSet",ptrlist,sampleList,package="flowWorkspace")
         G<-new("GatingSetInternal")
         G@pointer<-pointer
+        G@guid<-flowWorkspace:::.uuid_gen()
         
         #combine R objects
         ne<-new.env(parent=emptyenv());
@@ -270,29 +271,38 @@ setMethod("getPopStats","GatingSetList",function(x,...){
       res <- lapply(x,getPopStats,...)
       do.call(cbind,res)
     })
-save_gslist<-function(gslist,path,overwrite = FALSE,...){
+
+save_gslist<-function(gslist,path,...){
     
-  if(file.exists(path)){
-    path <- normalizePath(path,mustWork = TRUE)
-    if(overwrite){
-#      browser()
-      res <- unlink(path, recursive = TRUE)
-      if(res == 1){
-        stop("failed to delete ",path)
-      }
-    }else{
-      stop(path,"' already exists!")  
-    }
-    
-  }
-  
-  dir.create(path = path)
+#  if(file.exists(path)){
+#    path <- normalizePath(path,mustWork = TRUE)
+#    if(overwrite){
+#      res <- unlink(path, recursive = TRUE)
+#      if(res == 1){
+#        stop("failed to delete ",path)
+#      }
+#    }else{
+#      stop(path,"' already exists!")  
+#    }
+#    
+#  }
+  if(!file.exists(path))
+    dir.create(path = path)
   #do the dir normalization again after it is created
   path <- normalizePath(path,mustWork = TRUE)
   lapply(gslist,function(gs){
-        this_dir <- tempfile(pattern="gs",tmpdir=path)
-        dir.create(path = this_dir)
-        invisible(flowWorkspace:::.save_gs(gs,path = this_dir, ...))      
+#        this_dir <- tempfile(pattern="gs",tmpdir=path)
+#        dir.create(path = this_dir)
+#        browser()
+        guid <- gs@guid
+        if(length(guid)==0){
+          gs@guid <- flowWorkspace:::.uuid_gen()
+          guid <- gs@guid
+        }
+        this_dir <- file.path(path,guid) 
+
+#        invisible(flowWorkspace:::.save_gs(gs,path = this_dir, ...))
+        suppressMessages(save_gs(gs,path = this_dir, ...))
       })
 #  browser()
   #save sample vector
@@ -308,7 +318,7 @@ load_gslist<-function(path){
   path <- normalizePath(path,mustWork = TRUE)
   if(!file.exists(path))
     stop(path,"' not found!")
-  dirs<-dir(path,pattern="gs",full=TRUE)
+  dirs<-list.dirs(path,full=TRUE, recursive = FALSE)
 #   browser()
   res <- lapply(dirs,function(this_dir){
 #        browser()

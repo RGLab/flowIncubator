@@ -13,7 +13,8 @@ library(flowIncubator)
 gs <- load_gs("~/rglab/workspace/analysis/HVTN080/output/HVTNsubset")
 
 save_gs(gs,"~/rglab/workspace/flowIncubator/output/test", overwrite=T, save.cdf =T)
-gs <- load_gs("~/rglab/workspace/flowIncubator/output/test")
+gs <- load_gs("~/rglab/workspace/flowIncubator/output/test2")
+save_gs(gs,"~/rglab/workspace/flowIncubator/output/test2", overwrite=T, save.cdf =T,move.cdf=T)
 
 gh <- gs[[1]]
 x11()
@@ -151,7 +152,7 @@ gs_merged2
 gh<-gslist2[[1]]
 getNodes(gh)
 plot(gh,5)
-plot(gh,"CD3-")
+plot(gh,"3+")
 plot(gh,"19+ 20+")
 plot(gh,"19+ 20-")
 plot(gh,"19- 20-")
