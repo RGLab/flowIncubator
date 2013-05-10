@@ -12,9 +12,10 @@ library(flowIncubator)
 #getData
 gs <- load_gs("~/rglab/workspace/analysis/HVTN080/output/HVTNsubset")
 
-save_gs(gs,"~/rglab/workspace/flowIncubator/output/test", overwrite=T, save.cdf =T)
-gs <- load_gs("~/rglab/workspace/flowIncubator/output/test2")
-save_gs(gs,"~/rglab/workspace/flowIncubator/output/test2", overwrite=T, save.cdf =T,move.cdf=T)
+save_gs(gs,"~/rglab/workspace/flowIncubator/output/test",overwrite = T)
+gs <- load_gs("~/rglab/workspace/flowIncubator/output/test")
+getData(gs)
+save_gs(gs,"~/rglab/workspace/flowIncubator/output/test2", overwrite=T,cdf ="move")
 
 gh <- gs[[1]]
 x11()

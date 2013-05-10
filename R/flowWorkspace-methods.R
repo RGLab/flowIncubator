@@ -193,8 +193,9 @@ merge_gs<-function(x,...){
 ##the old data by mistake
 ##currently not exposed to end user
 ######################################
-save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
+save_gs<-function(G,path,overwrite = FALSE, cdf = "copy", ...){
 #  browser()
+  cdf <- match.arg(cdf,c("copy","move","skip","symlink"))
   guid <- G@guid
   if(length(guid)==0){
     G@guid <- flowWorkspace:::.uuid_gen()
@@ -246,9 +247,9 @@ save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
 #            browser()
             this_cdf <- file.path(path,this_files[cdf_ind])
             if(normalizePath(getData(G)@file)==this_cdf){
-              save.cdf <- FALSE
+              cdf <- "skip"
             }
-            if(save.cdf){
+            if(cdf != "skip"){
               file.remove(this_cdf)
              }
         }
@@ -265,7 +266,7 @@ save_gs<-function(G,path,overwrite = FALSE, save.cdf = TRUE, ...){
     
   }
 #  browser()
-  invisible(flowWorkspace:::.save_gs(G=G,path = path, save.cdf = save.cdf, ...))
+  invisible(.save_gs(G=G,path = path, cdf = cdf, ...))
   message("Done\nTo reload it, use 'load_gs' function\n")
   
   
