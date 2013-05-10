@@ -195,7 +195,7 @@ merge_gs<-function(x,...){
 ######################################
 save_gs<-function(G,path,overwrite = FALSE, cdf = "copy", ...){
 #  browser()
-  cdf <- match.arg(cdf,c("copy","move","skip","symlink"))
+  cdf <- match.arg(cdf,c("copy","move","skip","symlink","link"))
   guid <- G@guid
   if(length(guid)==0){
     G@guid <- flowWorkspace:::.uuid_gen()
