@@ -302,34 +302,47 @@ setMethod("plot",c("GatingHierarchyInternal","numeric"),function(x,y,...){
       
       # get graphNEL object
       g <- flowWorkspace:::.getGraph(x)
-      nodelist <- new.env(parent=emptyenv())
-      nodelist$v <-integer()
-      .getAllDescendants (x,y,nodelist)
-      nodelist$v <- c(nodelist$v,y)
-      #assume the number y is consistent with  R graph node name: N_x 
-      subNodes <- paste("N",nodelist$v-1,sep="_")
-      #convert numeric index to node name
-#      allNodes <- nodes(g)
-#      startNode <- paste("N",y,sep="_")
-     
-      #get ride of parents (since dfs doesn't like it)
-#      g <- subGraph(allNodes[-(1:(y-1))],g)
-      #do dfs search
-#      subGraphs <-dfs(g,startNode)
-#      if(any(grepl("discovered",names(subGraphs)))){
-#        
-#        subNodes <- subGraphs$discovered  
-#      }else{
-#        #if muliple graphs,pick the first one that contains the current startNode
-#        subGraphs <- subGraphs[[1]]
-#        subNodes <- subGraphs$discovered
-#      }
       
+      
+      if(length(y)==1){#use it as the root
+          nodelist <- new.env(parent=emptyenv())
+          nodelist$v <-integer()
+          .getAllDescendants (x,y,nodelist)  
+        
+        
+        
+          nodelist$v <- c(nodelist$v,y)
+          #assume the number y is consistent with  R graph node name: N_x
+          subNode_Ind <- nodelist$v
+          
+          #convert numeric index to node name
+    #      allNodes <- nodes(g)
+    #      startNode <- paste("N",y,sep="_")
+         
+          #get ride of parents (since dfs doesn't like it)
+    #      g <- subGraph(allNodes[-(1:(y-1))],g)
+          #do dfs search
+    #      subGraphs <-dfs(g,startNode)
+    #      if(any(grepl("discovered",names(subGraphs)))){
+    #        
+    #        subNodes <- subGraphs$discovered  
+    #      }else{
+    #        #if muliple graphs,pick the first one that contains the current startNode
+    #        subGraphs <- subGraphs[[1]]
+    #        subNodes <- subGraphs$discovered
+    #      }
+          
+        
+      }else{
+          #when y is a vector, use it to subset the graph
+          subNode_Ind <- y
+      }
+      
+      subNodes <- paste("N",subNode_Ind-1,sep="_")
       if(length(subNodes)<=1){
         stop("Rgraphviz doesn't know how to plot leaf node!")
       }
       g <- subGraph(subNodes, g)
-      
       flowWorkspace:::.plotGatingTree(g,...)
 
     })
