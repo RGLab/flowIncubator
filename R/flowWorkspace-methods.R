@@ -138,9 +138,100 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
 #Be careful that the splitted resluts still points to the original data set!!
 #drop the unused channels if needed before merging them 
 ##########################################################
+.groupByTree <- function(x){
+  message("Grouping by Gating tree...")
+  node_seq <-unlist(lapply(x,function(this_gs){
+            this_gh <- this_gs[[1]]
+            this_nodes <- getNodes(this_gh,isPath=T)
+            paste(this_nodes,collapse = "")
+            
+          }))
+  split(x,node_seq)
+}
+#try to determine the redundant terminal nodes that can be removed
+#in order to make trees mergable
+.checkRedundantNodes <- function(gs_groups){
+  nodeSet <- lapply(gs_groups,function(this_group){
+              getNodes(this_group[[1]][[1]],isPath=T)
+            })
+  commonNodes <- Reduce(intersect, nodeSet)
+  toRemove <- mapply(nodeSet,gs_groups,FUN=function(thisNodeSet,this_group){
+                  nodesToRm <- setdiff(thisNodeSet,commonNodes)
+                  #check if those nodes are terminal
+                  isTerminal <- sapply(nodesToRm,function(thisNode){
+                            length(getChildren(this_group[[1]][[1]],thisNode))==0
+                          })
+#                  browser()
+                  if(!all(isTerminal)){
+                    stop("Can't drop the non-terminal nodes",nodesToRm[!isTerminal])
+                  }    
+                  nodesToRm
+                })
+    toRemove       
+}
 
+#drop the terminal nodes
+.dropRedudantNodes <- function(gs_groups,toRemove){
+  mapply(toRemove,gs_groups,FUN=function(thisNodeSet,this_group){
+        if(length(thisNodeSet)>0){
+          lapply(thisNodeSet,function(thisNode){
+#                browser()
+                message("Removing ", thisNode)
+                lapply(this_group,function(this_gs){
+                      Rm(thisNode,this_gs)
+                    })
+              })
+        }
+      })
+  
+}
+
+##merge gs within each gs group
+.mergeGS <- function(gs_groups){
+  #start to merge      
+  lapply(1:length(gs_groups),function(i){
+#            browser()
+        this_group <- gs_groups[[i]]
+        
+        #drop the unused marker from fs
+        if(length(this_group) > 1){
+          this_group <- lapply(this_group,function(this_gs){
+#                    browser()
+                this_fs <- getData(this_gs)
+                
+                this_pd <- pData(parameters(this_fs[[1]]))
+                non_na_channel <- unname(!is.na(this_pd[,"desc"]))
+                to_include <- grepl(pattern="[FS]SC|[Tt]ime",this_pd[,"name"])
+                to_include <- to_include |  non_na_channel
+                if(length(which(to_include)) != nrow(this_pd)){
+                  
+                  message("drop empty channel:",this_pd[!to_include,1])
+                  
+                  ncFlowSet(this_gs) <- this_fs[,to_include]
+                  
+                }
+                this_gs
+              })
+        }
+        
+        GatingSetList(this_group)
+      })
+}
+#wrapper for labkey where only one gslist to be returned
+merge_gs_labkey <- function(x,...){
+  gs_groups <- .groupByTree(x, drop = TRUE)
+ 
+  if(length(gs_groups)>1){
+      stop("Can't merge because multiple gating trees are present!")
+  }else{
+    res <- .mergeGS(gs_groups)
+    res[[1]]
+  }
+
+}
 
 #from list to GatingSetList
+#TODO: to deprecate
 merge_gs<-function(x,...){
 #      browser()
       

@@ -187,9 +187,15 @@ gslist <- GatingSetList(list1)
 gs <- rbind2(gslist1)
 
 
-#
-gs_list <- lapply(list.dirs("/home/gfinak/RV144reanalysis/RV144/",recur=F)[1:3],load_gs)
-gslist <- GatingSetList(gs_list)
-colnames(getData(gs_list[[1]])[[1]])
-colnames(getData(gs_list[[2]])[[1]])
-gslist <- merge_gs(gs_list)
+#merge by dropping redundant terminal gates
+gs <- load_gs(file.path("/loc/no-backup/ITN507data/data","autoGating"))
+gs1<-clone(gs[1:2])
+gs2<-clone(gs[3:4])
+setNode(gs2,"cd3","CD3")
+getNodes(gs2[[1]])
+Rm("Bcell",gs2)
+gs_groups <- .groupByTree(list(gs1,gs2))
+toRemove <- .checkRedundantNodes(gs_groups)
+.dropRedudantNodes(gs_groups,toRemove)
+new_group <- unlist(gs_groups)
+gslist <- .mergeGS(gs_groups)
