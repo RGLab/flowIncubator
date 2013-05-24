@@ -171,7 +171,7 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
 }
 
 #drop the terminal nodes
-.dropRedudantNodes <- function(gs_groups,toRemove){
+.dropRedundantNodes <- function(gs_groups,toRemove){
   mapply(toRemove,gs_groups,FUN=function(thisNodeSet,this_group){
         if(length(thisNodeSet)>0){
           lapply(thisNodeSet,function(thisNode){

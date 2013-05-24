@@ -12,11 +12,12 @@ library(flowIncubator)
 #getData
 gs <- load_gs("~/rglab/workspace/analysis/HVTN080/output/HVTNsubset")
 
-save_gs(gs,"~/rglab/workspace/flowIncubator/output/test",overwrite = T)
+save_gs(gs,"~/rglab/workspace/flowIncubator/output/test")
 gs <- load_gs("~/rglab/workspace/flowIncubator/output/test")
 getData(gs)
-save_gs(gs,"~/rglab/workspace/flowIncubator/output/test2", overwrite=T,cdf ="move")
-
+save_gs(gs,path="~/rglab/workspace/flowIncubator/output/remote/test2",overwrite=T,cdf="symlink")
+gs <- load_gs("~/rglab/workspace/flowIncubator/output/remote/test2")
+save_gs(gs,path="~/rglab/workspace/flowIncubator/output/test d", cdf="move")
 gh <- gs[[1]]
 x11()
 plotGate(gs[[1]],"4+/IL2+")
@@ -196,6 +197,6 @@ getNodes(gs2[[1]])
 Rm("Bcell",gs2)
 gs_groups <- .groupByTree(list(gs1,gs2))
 toRemove <- .checkRedundantNodes(gs_groups)
-.dropRedudantNodes(gs_groups,toRemove)
+.dropRedundantNodes(gs_groups,toRemove)
 new_group <- unlist(gs_groups)
 gslist <- .mergeGS(gs_groups)
