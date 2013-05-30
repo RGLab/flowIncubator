@@ -186,16 +186,13 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
   
 }
 
-##merge gs within each gs group
-.mergeGS <- function(gs_groups){
-  #start to merge      
-  lapply(1:length(gs_groups),function(i){
-#            browser()
-        this_group <- gs_groups[[i]]
+##merge gs 
+.mergeGS <- function(this_gslist){
+  
         
         #drop the unused marker from fs
-        if(length(this_group) > 1){
-          this_group <- lapply(this_group,function(this_gs){
+        if(length(this_gslist) > 1){
+          this_gslist <- lapply(this_gslist,function(this_gs){
 #                    browser()
                 this_fs <- getData(this_gs)
                 
@@ -214,21 +211,21 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
               })
         }
         
-        GatingSetList(this_group)
-      })
+        GatingSetList(this_gslist)
+      
 }
 #wrapper for labkey where only one gslist to be returned
-merge_gs_labkey <- function(x,...){
-  gs_groups <- .groupByTree(x, drop = TRUE)
- 
-  if(length(gs_groups)>1){
-      stop("Can't merge because multiple gating trees are present!")
-  }else{
-    res <- .mergeGS(gs_groups)
-    res[[1]]
-  }
-
-}
+#merge_gs_labkey <- function(x,...){
+#  gs_groups <- .groupByTree(x, drop = TRUE)
+# 
+#  if(length(gs_groups)>1){
+#      stop("Can't merge because multiple gating trees are present!")
+#  }else{
+#    res <- .mergeGS(gs_groups)
+#    res[[1]]
+#  }
+#
+#}
 
 #from list to GatingSetList
 #TODO: to deprecate
