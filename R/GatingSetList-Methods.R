@@ -253,21 +253,10 @@ setMethod("plotGate",signature(x="GatingSetList",y="numeric"),function(x,y, ...)
 
 setMethod("getQAStats",signature("GatingSetList"),function(obj,...){
       res <- lapply(obj,function(gs){
-            
-            statsOfGS <- getQAStats(gs,...)
-            #append id to stats
-            statsOfGS <- lapply(names(statsOfGS),function(curID){
-                  curStats<-statsOfGS[[curID]]
-                  curStats$id<-as.integer(curID)
-                  curStats
-                })
-#            do.call("rbind",statsOfGS)
-            statsOfGS
+            getQAStats(gs,...)
           })
       
       unlist(res,recursive = FALSE)
-#       do.call(rbind,res)  
-      
     })
 setMethod("getPopStats","GatingSetList",function(x,...){
       res <- lapply(x,getPopStats,...)
