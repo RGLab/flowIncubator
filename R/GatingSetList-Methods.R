@@ -261,10 +261,12 @@ setMethod("getQAStats",signature("GatingSetList"),function(obj,...){
                   curStats$id<-as.integer(curID)
                   curStats
                 })
-            do.call("rbind",statsOfGS)
+#            do.call("rbind",statsOfGS)
+            statsOfGS
           })
       
-       do.call(rbind,res)  
+      unlist(res,recursive = FALSE)
+#       do.call(rbind,res)  
       
     })
 setMethod("getPopStats","GatingSetList",function(x,...){
