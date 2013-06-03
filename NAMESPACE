@@ -13,25 +13,11 @@ importMethodsFrom(flowWorkspace
 					,"lapply"
 					)
 importFrom(flowWorkspace,booleanFilter)
-importFrom(QUALIFIER,getQAStats)
 
-
-exportClasses(GatingSetList)
-
-exportMethods("lapply"
-			 ,"getData"
+exportMethods("getData"
 			 ,getIndices
-			 ,"rbind2"
-			 ,"show"
-			 ,"getSamples"
-			 ,"[["
-			 ,"["
-			 ,"plotGate"
-			 ,"getQAStats"
-			 ,"pData"
 			 ,"getGate"
-			 ,"getPopStats"
 			 )
 			 
-export("save_gs","load_gs","save_gslist","load_gslist", GatingSetList, merge_gs, getIndiceMat)
+export(merge_gs, getIndiceMat)
 
