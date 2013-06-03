@@ -3,8 +3,9 @@ setClass("GatingSetList"
         ,representation=representation(
             data = "list"
             ,samples="character" #this determine the order of samples exposed to user
-          )
-          ,validity=function(object){
+          ))
+      
+validGatingSetListObject <- function(object){
             
             gs_list <- object@data
             #check overlapping samples
@@ -25,9 +26,8 @@ setClass("GatingSetList"
             
             
             is_error <- sapply(res,function(this_res){
-                            class(this_res) == "character"
+                          is.na(as.logical(this_res))
                           })
-#            browser()
             if(any(is_error)){
               this_error_ind <- which(is_error)[1]
               return (paste("GatingSet 1 and",this_error_ind+1,":",res[this_error_ind]))
@@ -37,8 +37,11 @@ setClass("GatingSetList"
               return ("'samples' slot is not consisitent with sample names from GatingSets!")
             }          
             return (TRUE)
-          }
-        )
+     }
+
+setValidity("GatingSetList", validGatingSetListObject)     
+
+
 .flattenedGatingHiearchy<-function(gh){
   this_nodes <- getNodes(gh,isPath=T)
   paste(this_nodes,collapse = "")
@@ -52,8 +55,9 @@ setClass("GatingSetList"
   }
 }
 .compareFlowData<-function(fs1,fs2){
-  col1 <- colnames(fs1)
-  col2 <- colnames(fs2)
+  #it is strange that colnames doesn't dispatch properly without namespace prefix
+  col1 <- flowCore::colnames(fs1)
+  col2 <- flowCore::colnames(fs2)
   if(!identical(col1,col2)){
 #    sCol1 <- paste(col1,collapse=" ")
 #    sCol2 <- paste(col2,collapse=" ")
