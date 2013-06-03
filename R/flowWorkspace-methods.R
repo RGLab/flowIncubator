@@ -189,24 +189,43 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
 ##merge gs 
 .mergeGS <- function(this_gslist){
   
+        global_colnames <- NULL
         
-        #drop the unused marker from fs
         if(length(this_gslist) > 1){
           this_gslist <- lapply(this_gslist,function(this_gs){
 #                    browser()
+                    
+                #drop the unused marker from fs                    
                 this_fs <- getData(this_gs)
-                
-                this_pd <- pData(parameters(this_fs[[1]]))
+                this_fr <- this_fs[[1]]
+                this_pd <- pData(parameters(this_fr))
                 non_na_channel <- unname(!is.na(this_pd[,"desc"]))
                 to_include <- grepl(pattern="[FS]SC|[Tt]ime",this_pd[,"name"])
                 to_include <- to_include |  non_na_channel
+                this_fs_colnames <- colnames(this_fs)
                 if(length(which(to_include)) != nrow(this_pd)){
-                  
+                  #drop channels from colnames of flowFrame
                   message("drop empty channel:",this_pd[!to_include,1])
-                  
-                  ncFlowSet(this_gs) <- this_fs[,to_include]
+                  fr_colnames <- colnames(this_fr)
+                  fr_colnames <- fr_colnames[to_include]
+                  #update the colnames of flowSet accordingly                                   
+                  this_fs_colnames <- this_fs_colnames[match(fr_colnames,this_fs_colnames)]
+                }
+                                 
+                #reorder colnames of fs
+                if(is.null(global_colnames)){
+                  #init global_colnames for the first gs
+                  global_colnames <<- this_fs_colnames
+                }else{
+                  if(setequal(global_colnames,this_fs_colnames)){
+                    #reorder colnames of other gs by global_colnames
+                    this_fs_colnames <- global_colnames 
+                  }else{
+                    stop("colnames of flow data are different!")
+                  }
                   
                 }
+                ncFlowSet(this_gs) <- this_fs[,this_fs_colnames]
                 this_gs
               })
         }
@@ -231,7 +250,7 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
 #TODO: to deprecate
 merge_gs<-function(x,...){
 #      browser()
-      
+
       message("Grouping by Gating tree...")
       node_seq <-unlist(lapply(x,function(this_gs){
                 this_gh <- this_gs[[1]]
