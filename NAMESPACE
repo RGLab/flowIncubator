@@ -1,18 +1,22 @@
-importMethodsFrom(flowWorkspace
-					,"getData"
-					,"add"
-					,"Rm"
-					,"getNodes"
-					,"recompute"
-					,"getGate"
-					,"[["
-					,"["
-					,"getIndices"
-					,"getSamples"
-					,"getPopStats"
-					,"lapply"
-					)
-importFrom(flowWorkspace,booleanFilter)
+#importMethodsFrom(flowWorkspace
+#					,"getData"
+#					,"add"
+#					,"Rm"
+#					,"getNodes"
+#					,"recompute"
+#					,"getGate"
+#					,"[["
+#					,"["
+#					,"getIndices"
+#					,"getSamples"
+#					,"getPopStats"
+#					,"lapply"
+#					)
+#importFrom(flowWorkspace,booleanFilter)
+
+import(flowWorkspace)
+
+importFrom(BiocGenerics,colnames)
 
 exportMethods("getData"
 			 ,getIndices

@@ -189,7 +189,7 @@ gs <- rbind2(gslist1)
 
 
 #merge by dropping redundant terminal gates
-gs <- load_gs(file.path("/loc/no-backup/ITN507data/data","autoGating"))
+gs <- load_gs(file.path("/home/wjiang2/rglab/workspace/analysis/ITN507ST/Newell/sharedData","autoGating12"))
 gs1<-clone(gs[1:2])
 gs2<-clone(gs[3:4])
 setNode(gs2,"CD3","cd3")
