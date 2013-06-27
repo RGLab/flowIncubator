@@ -187,7 +187,7 @@ list1 <- lapply(fs_list,GatingSet)
 gslist <- GatingSetList(list1)
 gs <- rbind2(gslist1)
 
-
+library(flowIncubator)
 #merge by dropping redundant terminal gates
 gs <- load_gs(file.path("/home/wjiang2/rglab/workspace/analysis/ITN507ST/Newell/sharedData","autoGating12"))
 gs1<-clone(gs[1:2])
@@ -195,8 +195,33 @@ gs2<-clone(gs[3:4])
 setNode(gs2,"CD3","cd3")
 getNodes(gs2[[1]])
 Rm("IgD+cd27+",gs2)
-gs_groups <- .groupByTree(list(gs1,gs2))
-toRemove <- .checkRedundantNodes(gs_groups)
-.dropRedundantNodes(gs_groups,toRemove)
+gs_groups <- flowIncubator:::.groupByTree(list(gs1,gs2))
+toRemove <- flowIncubator:::.checkRedundantNodes(gs_groups)
+flowIncubator:::.dropRedundantNodes(gs_groups,toRemove)
 new_group <- unlist(gs_groups)
-gslist <- .mergeGS(new_group)
+gslist <- flowIncubator:::.mergeGS(new_group)
+
+
+
+#impute Gate
+getNodes(gs[[1]])
+Rm("MTG+", gs)
+library(Cairo)
+CairoX11()
+#visual check gating
+plotGate(gs, "MTG_gate", xbin=64,margin=T
+    ,type="densityplot"
+)
+#outlier detection
+popStats <- getPopStats(gs)["/s1/s2/live/lymph/cd3/Bcell/MTG_gate",]
+outlierInd <- QUALIFIER:::outlier.cutoff(popStats,uBound=0.80)
+failedSamples <- names(which(outlierInd))
+
+
+#.nearestSample(gs, "MTG_gate", target = "M+T panel_911333F04.fcs", source = getSamples(gs)[-5])
+refSamples <- .nearestSamples(gs, "MTG_gate", failedSamples)
+data.frame(fail=names(refSamples),ref=refSamples,row.names=NULL)
+refGates <- sapply(refSamples,function(i)getGate(gs[[i]],"MTG_gate"))
+setGate(gs[failedSamples],"MTG_gate",refGates)
+recompute(gs[failedSamples],"MTG_gate")
+

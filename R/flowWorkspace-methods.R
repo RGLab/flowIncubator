@@ -1,3 +1,67 @@
+#' impute the gate (flagged as failure by external algorithm) with refGate from nearest neighbour sample
+#'
+#' @param gs a \code{GatingSet}
+#' @param node a \code{character} or \code{numeric} specifing node index
+#' @param failed a \code{character} or \code{numeric} specifing samples that fails the gating QA
+#' @param ... other arguments passed to \code{.nearestSample}
+
+.nearestSamples <- function(gs, node, failed, ...){
+  #get samples that do not fail the QA check
+#  browser()
+  samples <- getSamples(gs)
+  failedInd <- match(failed,samples)
+  samples <- samples[-c(failedInd)]
+  sapply(failed,function(thisTarget).nearestSample(gs, node = node, target = thisTarget, source = samples, ...))
+
+}
+
+#' find the nearest neighbour sample that shares the most similar density profile of the specifed gate   
+#' the similarity is defined by the Earth-Mover's distance 
+#'
+#' @param gs a \code{GatingSet}
+#' @param node a \code{character} or \code{numeric} specifing node index
+#' @param n an \code{integer} passed to \code{density} call
+#' @param ... other arguments passed to \code{density} call
+.nearestSample <- function(gs, node, target, source, n = 512,...){
+  
+  thisGh <- gs[[target]]
+  
+  #get data 
+  parentNode <- getParent(thisGh, node)
+  thisGate <- getGate(thisGh, node)
+  params <- parameters(thisGate)
+  parentData <- getData(gs,parentNode)[,params]
+  
+  if(length(params) == 1){
+    #get 1d density of failed sample
+    tData <- parentData[[target]]
+    tDen <- density(exprs(tData), n =n ,...)
+    tMat <- matrix(c(tDen$y,tDen$x),ncol = 2)
+#    browser()
+    #TODO:customize mc.cores
+    #cal dist from each sample
+    distVec <- mclapply(source,function(thisSample){
+                              #get 1d density of target sample
+                              thisData <- parentData[[thisSample]]
+                              thisDen <- density(exprs(thisData), n =n ,...)
+                              thisMat <- matrix(c(thisDen$y,thisDen$x),ncol = 2)
+                              
+                              #cal the dist
+                              thisDist <- emd(tMat,thisMat)
+                              thisDist
+                            })
+                          
+   #pick the closet one    
+    source[which.min(distVec)]
+   
+   
+  }else if(length(params) == 2){
+    stop("Imputing 2d Gate not supported yet!")
+  }
+  
+}
+
+
 #routine to return the indices by specify boolean combination of reference nodes:
 # y is a quoted expression.
 #1.adds the boolean gates and does the gating on the fly 
