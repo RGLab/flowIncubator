@@ -220,7 +220,7 @@ failedSamples <- names(which(outlierInd))
 
 hist(popStats)
 #.nearestSample(gs, "MTG_gate", target = "M+T panel_903997-25.fcs", source = getSamples(gs)[-5])
-refSamples <- .nearestSamples(gs, "MTG_gate", failedSamples)
+system.time(refSamples <- .nearestSamples(gs, "MTG_gate", failedSamples, method = "ks.test"))
 samplePairs <- data.frame(fail=names(refSamples),ref=refSamples,row.names=NULL)
 refGates <- sapply(refSamples,function(i)getGate(gs[[i]],"MTG_gate"))
 setGate(gs[failedSamples],"MTG_gate",refGates)

@@ -25,7 +25,8 @@
 #' @param node a \code{character} or \code{numeric} specifing node index
 #' @param n an \code{integer} passed to \code{density} call
 #' @param ... other arguments passed to \code{density} call
-.nearestSample <- function(gs, node, target, source, n = 512,...){
+.nearestSample <- function(gs, node, target, source, n = 512, method = c("ks.test","em"), ...){
+  method <- match.arg(method, c("ks.test","em"))
   
   thisGh <- gs[[target]]
   
@@ -41,45 +42,50 @@
     tData <- parentData[[target]]
     
     #exclude marginal events below zero
-    expression1 <- paste0("`",params,"`>0")
-    ef <- char2ExpressionFilter(expression1)
-    tData <- Subset(tData,ef)
+#    expression1 <- paste0("`",params,"`>0")
+#    ef <- char2ExpressionFilter(expression1)
+#    tData <- Subset(tData,ef)
 
-    #get 1d density of failed sample
     tExpr <- exprs(tData)
-    tDen <- density(tExpr, n =n ,...)
-    tMat <- matrix(c(tDen$y,tDen$x),ncol = 2)
     
+    if(method == "em"){
+        #get 1d density of failed sample
+        tDen <- density(tExpr, n =n ,...)
+        tMat <- matrix(c(tDen$y,tDen$x),ncol = 2)
+    }
     #TODO:customize mc.cores
     #cal dist from each sample
     distVec <- lapply(source,function(thisSample){
                               #get 1d density of target sample
                               thisData <- parentData[[thisSample]]
                               #apply the same filter
-                              thisData <- Subset(thisData,ef)
+#                              thisData <- Subset(thisData,ef)
                               
-
+                              thisExpr <- exprs(thisData)
                               #cal the dist
 #                              browser()
-                              #KL
-#                              thisDist <- KLx.dist(tExpr, thisExpr, k=1)
-#                              KLx.dist(rnorm(1:100),rnorm(1:100),k=1)
-   
-          #EM
-                              thisExpr <- exprs(thisData)
-                              thisDen <- density(thisExpr, n =n ,...)
-                              thisMat <- matrix(c(thisDen$y,thisDen$x),ncol = 2)
-                              thisDist <- emd(tMat,thisMat)
+                              if(method == "ks.test"){
+                                thisDist <- ks.test(tExpr,thisExpr)$statistic
+                              }else if(method == "em"){
+                                #EM
+                                
+                                thisDen <- density(thisExpr, n =n ,...)
+                                thisMat <- matrix(c(thisDen$y,thisDen$x),ncol = 2)
+                                thisDist <- emd(tMat,thisMat)  
+                              }
+                              ks.test <-
+                              
           
                               thisDist
                             })
 #    browser()
     ##visualize the distance vs density
-#    dat <- Subset(parentData[c(target,source[-3])],ef)
-#    pData(dat)$dist <- c(0,round(unlist(distVec[-3])))
+#    dat <- parentData[c(target,source[-3])]
+#    dat <- Subset(dat,ef)
+#    pData(dat)$dist <- c(0,as.numeric(format(unlist(distVec[-3]),digits=2)))
 #    densityplot(as.formula(paste0("as.factor(dist)~`",params,"`")),dat
 #            ,darg=list(bw="nrd0",n=n)
-#              , main = "EM distance"
+#              , main = paste(method, "distance")
 #            )
    #pick the closet one    
     source[which.min(distVec)]
