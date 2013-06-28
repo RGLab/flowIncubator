@@ -205,23 +205,26 @@ gslist <- flowIncubator:::.mergeGS(new_group)
 
 #impute Gate
 getNodes(gs[[1]])
-Rm("MTG+", gs)
+Rm("MTG_gate", gs)
 library(Cairo)
 CairoX11()
 #visual check gating
 plotGate(gs, "MTG_gate", xbin=64,margin=T
     ,type="densityplot"
+    ,darg=list(bw = "nrd0",n=512)
 )
 #outlier detection
 popStats <- getPopStats(gs)["/s1/s2/live/lymph/cd3/Bcell/MTG_gate",]
 outlierInd <- QUALIFIER:::outlier.cutoff(popStats,uBound=0.80)
 failedSamples <- names(which(outlierInd))
 
-
-#.nearestSample(gs, "MTG_gate", target = "M+T panel_911333F04.fcs", source = getSamples(gs)[-5])
+hist(popStats)
+#.nearestSample(gs, "MTG_gate", target = "M+T panel_903997-25.fcs", source = getSamples(gs)[-5])
 refSamples <- .nearestSamples(gs, "MTG_gate", failedSamples)
-data.frame(fail=names(refSamples),ref=refSamples,row.names=NULL)
+samplePairs <- data.frame(fail=names(refSamples),ref=refSamples,row.names=NULL)
 refGates <- sapply(refSamples,function(i)getGate(gs[[i]],"MTG_gate"))
 setGate(gs[failedSamples],"MTG_gate",refGates)
 recompute(gs[failedSamples],"MTG_gate")
+
+
 
