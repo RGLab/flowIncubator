@@ -163,7 +163,7 @@ getIndiceMat<-function(gh,y){
       },USE.NAMES=FALSE)
   
   #match to the pdata of flow frame
-  fr <- getData(gh)
+  fr <- getData(gh, use.exprs = FALSE)
   this_pd <- pData(parameters(fr))
   all_markers <- this_pd[,"desc"]
   all_markers <- as.character(all_markers)
@@ -204,13 +204,15 @@ getIndiceMat<-function(gh,y){
 setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_marker_list = list(),...){
       #get ind of bool gate
       bool_inds <- getIndices(obj,y,...)
-      pop_chnl<- .getPopChnlMapping(obj[[1]],y,pop_marker_list)
-      this_chnls <- as.character(pop_chnl[,"name"])
-      this_pops <-  as.character(pop_chnl[,"pop"])
+      
       
       lapply(obj,function(gh){
+            #get pop vs channel mapping
+            pop_chnl<- .getPopChnlMapping(gh,y,pop_marker_list)
+            this_chnls <- as.character(pop_chnl[,"name"])
+            this_pops <-  as.character(pop_chnl[,"pop"])
+            
             #get mask mat
-#      browser()
             this_sample <- getSample(gh)
             message(this_sample)
             
@@ -233,13 +235,17 @@ setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_
           })     
     })
 setMethod("getData",signature=c("GatingSetList","name"),function(obj, y, pop_marker_list = list(), ...){
-      pop_chnl<- .getPopChnlMapping(obj[[1]],y,pop_marker_list)
-      this_pops <-  as.character(pop_chnl[,"pop"])
-      this_chnls <- as.character(pop_chnl[,"name"])
+      
 #      browser()
       sapply(getSamples(obj),function(this_sample){
             message(this_sample)
-            gh <- obj[[this_sample]]       
+            gh <- obj[[this_sample]]
+            
+            pop_chnl<- .getPopChnlMapping(gh,y,pop_marker_list)
+            this_pops <-  as.character(pop_chnl[,"pop"])
+            this_chnls <- as.character(pop_chnl[,"name"])
+            
+            
             #get mask mat
 #      browser()
             
@@ -265,7 +271,7 @@ setMethod("getData",signature=c("GatingSetList","name"),function(obj, y, pop_mar
               this_subset  
             }
             
-          })  
+          },simplify = FALSE)  
       
     })
 
