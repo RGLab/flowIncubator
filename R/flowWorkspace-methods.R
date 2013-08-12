@@ -5,7 +5,8 @@
 #' or \code{densityplot} without the gate. 
 #' 
 #' @param x \code{character} x channel
-#' @param y \code{character} y channel, if empty string,then try to do \code{densityplot}
+#' @param y \code{character} y channel, if \code{NULL},then try to do \code{densityplot}
+#' @export 
 plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab=NULL,...){
   #get all childrens
   cids<-getChildren(G[[1]],parentID)
@@ -181,15 +182,17 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 }
 
 
-#routine to return the indices by specify boolean combination of reference nodes:
-# y is a quoted expression.
-#1.adds the boolean gates and does the gating on the fly 
-#2.return the indices associated with that bool gate
-#3. remove the bool gate
-# the typical use case would be extracting any-cytokine-expressed cells
-#example:
-# getIndices(gs,quote(`4+/TNFa+|4+/IL2+`)) (it may be faster than R version
-###############################################################################
+#' routine to return the indices by specify boolean combination of reference nodes:
+#' 
+#' It adds the boolean gates and does the gating on the fly, and 
+#' return the indices associated with that bool gate, and
+#' remove the bool gate
+#' the typical use case would be extracting any-cytokine-expressed cells
+#' @param y a quoted expression.
+#' @example:
+#' getIndices(gs,quote(`4+/TNFa+|4+/IL2+`)) (it may be faster than R version)
+#' @export 
+#' @import flowWorkspace
 setMethod("getIndices",signature=c("GatingSetInternal","name"),function(obj, y, ...){
       
       bf <- eval(substitute(booleanFilter(v),list(v=y)))
@@ -218,7 +221,7 @@ setMethod("getIndices",signature=c("GatingSetInternal","name"),function(obj, y, 
       }
       
    })
-
+#' @export 
 getIndiceMat<-function(gh,y){
   strExpr <- as.character(y)
   nodes <- strsplit(strExpr,split="\\|")[[1]]
@@ -228,9 +231,8 @@ getIndiceMat<-function(gh,y){
   #construct the indice matrix
   do.call(cbind,indice_list)
 }
-#########################################
-#create mapping between pops and channels
-##########################################
+
+#' create mapping between pops and channels
 .getPopChnlMapping<-function(gh, y, pop_marker_list){
 #  browser()
   #get pop names
@@ -284,6 +286,23 @@ getIndiceMat<-function(gh,y){
   
   
 }
+
+#' Return the flowSet associated with a GatingSet by boolean expression
+#' 
+#' Returns a flowSet containing the events defined at by boolean expression \code{y}.
+#' @param obj A \code{GatingSet} object .
+#' @param y \code{name} boolean expression specifying the boolean combination of different cell populations
+#' @return A \code{list} of \code{numerci matrices}
+#' @author Mike Jiang \email{wjiang2@fhcrc.org}
+#' @seealso \code{\link{getIndices}} \code{\link{getProp}} \code{\link{getPopStats}}
+#' @example \dontrun{
+#' 	#G is a GatingSet
+#' 	geData(G,3)
+#' 	res <- getData(gs[1],quote(`4+/TNFa+|4+/IL2+`))
+#' 	res[[1]]
+#' }
+#' @export
+
 setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_marker_list = list(),...){
       #get ind of bool gate
       bool_inds <- getIndices(obj,y,...)
@@ -461,7 +480,8 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
         GatingSetList(this_gslist)
       
 }
-#wrapper for labkey where only one gslist to be returned
+
+#' this is the wrapper for labkey where only one gslist to be returned
 #merge_gs_labkey <- function(x,...){
 #  gs_groups <- .groupByTree(x, drop = TRUE)
 # 
@@ -474,8 +494,32 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
 #
 #}
 
-#from list to GatingSetList
 #TODO: to deprecate
+#' cluster/merge GatingSets based on the gating tree structures.
+#' 
+#' merge GatingSets based on the gating tree structures.
+#' 
+#' @details Group the individual GatingSets by their gating schemes.It is done by comparing the node list returned by \code{\link{getNodes}},which assumes
+#' they follow the same population naming conventions.
+#' Meanwhile the unused channels are automatically dropped to make sure the flow data has identical data structure within each group.
+#' In order to further merge multiple GatingSet objects into one, use \code{\link{rbind2}}.     
+#' 
+#' @param x A \code{list} of \code{GatingSet}s . 
+#' @return A \code{\link{GatingSetList}} that contains multiple GatingSets each of which share the same gating and data structure.
+#' @author Mike Jiang \email{wjiang2@fhcrc.org}
+#' @seealso \code{\link{rbind2}},\code{\link{GatingSetList}}
+#' @example \dontrun{
+#' 	#load gatingsets from disk
+#' 	#gs_toMerge is the path that stores multiple archived gatingsets
+#' 	gs_list<-lapply(list.files("flowIncubator/output/gs_toMerge",full=T),function(this_folder){
+#'       flowWorkspace:::load_gs(this_folder)
+#'     })
+#'     
+#' 	gs_list <- merge_gs(gs_list)
+#' 	gs_list
+#' 	
+#' }
+#' @export 
 merge_gs<-function(x,...){
 #      browser()
 
