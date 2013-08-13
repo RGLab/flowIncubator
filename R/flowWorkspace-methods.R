@@ -7,6 +7,8 @@
 #' @param x \code{character} x channel
 #' @param y \code{character} y channel, if \code{NULL},then try to do \code{densityplot}
 #' @export 
+#' @importFrom BiocGenerics colnames
+
 plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab=NULL,...){
   #get all childrens
   cids<-getChildren(G[[1]],parentID)
@@ -189,7 +191,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #' remove the bool gate
 #' the typical use case would be extracting any-cytokine-expressed cells
 #' @param y a quoted expression.
-#' @example:
+#' @examples
 #' getIndices(gs,quote(`4+/TNFa+|4+/IL2+`)) (it may be faster than R version)
 #' @export 
 #' @import flowWorkspace
@@ -293,9 +295,9 @@ getIndiceMat<-function(gh,y){
 #' @param obj A \code{GatingSet} object .
 #' @param y \code{name} boolean expression specifying the boolean combination of different cell populations
 #' @return A \code{list} of \code{numerci matrices}
-#' @author Mike Jiang \email{wjiang2@fhcrc.org}
+#' @author Mike Jiang \email{wjiang2@@fhcrc.org}
 #' @seealso \code{\link{getIndices}} \code{\link{getProp}} \code{\link{getPopStats}}
-#' @example \dontrun{
+#' @examples \dontrun{
 #' 	#G is a GatingSet
 #' 	geData(G,3)
 #' 	res <- getData(gs[1],quote(`4+/TNFa+|4+/IL2+`))
@@ -506,9 +508,9 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
 #' 
 #' @param x A \code{list} of \code{GatingSet}s . 
 #' @return A \code{\link{GatingSetList}} that contains multiple GatingSets each of which share the same gating and data structure.
-#' @author Mike Jiang \email{wjiang2@fhcrc.org}
+#' @author Mike Jiang \email{wjiang2@@fhcrc.org}
 #' @seealso \code{\link{rbind2}},\code{\link{GatingSetList}}
-#' @example \dontrun{
+#' @examples \dontrun{
 #' 	#load gatingsets from disk
 #' 	#gs_toMerge is the path that stores multiple archived gatingsets
 #' 	gs_list<-lapply(list.files("flowIncubator/output/gs_toMerge",full=T),function(this_folder){

@@ -1,11 +1,7 @@
+export(getIndiceMat)
+export(merge_gs)
+export(plotGate_labkey)
+exportMethods(getData)
+exportMethods(getIndices)
 import(flowWorkspace)
-
 importFrom(BiocGenerics,colnames)
-
-exportMethods("getData"
-			 ,getIndices
-			 ,"getGate"
-			 )
-			 
-export(merge_gs, getIndiceMat)
-
