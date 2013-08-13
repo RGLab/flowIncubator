@@ -21,12 +21,16 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
           if(class(g)!="booleanFilter") 
           {
             prj<-parameters(g)
-            if(length(prj)==1)
+            if(length(prj)==1)#1d gate
             {
               return (prj%in%c(x,y))
               
             }else
             {
+              #2d gate but y is absent
+              if(is.null(y))
+                return (FALSE)
+              #try to match x,y to 2d gate
               revPrj<-rev(prj)
               if((x==prj[1]&&y==prj[2])||(x==revPrj[1]&&y==revPrj[2]))
                 return (TRUE)
@@ -49,7 +53,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #  formula1<-paste("`",y,"`~`",x,"`",sep="")
   if(!is.null(cond))
     formula1<-paste(formula1,cond,sep="|")
-  formula1<-as.formula(formula1)
+  formula1 <- as.formula(formula1)
 #	browser()
   type <- ifelse(is.null(y), "densityplot","xyplot")
   if(isPlotGate)
