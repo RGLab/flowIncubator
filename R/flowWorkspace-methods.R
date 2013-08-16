@@ -199,7 +199,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #' getIndices(gs,quote(`4+/TNFa+|4+/IL2+`)) (it may be faster than R version)
 #' @export 
 #' @import flowWorkspace
-setMethod("getIndices",signature=c("GatingSetInternal","name"),function(obj, y, ...){
+setMethod("getIndices",signature=c("GatingSet","name"),function(obj, y, ...){
       
       bf <- eval(substitute(booleanFilter(v),list(v=y)))
       gh <- obj[[1]]
@@ -309,7 +309,7 @@ getIndiceMat<-function(gh,y){
 #' }
 #' @export
 
-setMethod("getData",signature=c("GatingSetInternal","name"),function(obj, y,pop_marker_list = list(),...){
+setMethod("getData",signature=c("GatingSet","name"),function(obj, y,pop_marker_list = list(),...){
       #get ind of bool gate
       bool_inds <- getIndices(obj,y,...)
       
