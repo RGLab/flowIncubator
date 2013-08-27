@@ -478,7 +478,7 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
                   }
                   
                 }
-                ncFlowSet(this_gs) <- this_fs[,this_fs_colnames]
+                flowData(this_gs) <- this_fs[,this_fs_colnames]
                 this_gs
               })
         }
@@ -558,7 +558,7 @@ merge_gs<-function(x,...){
                     
                       message("drop empty channel:",this_pd[!to_include,1])
                       
-                      ncFlowSet(this_gs) <- this_fs[,to_include]
+                      flowData(this_gs) <- this_fs[,to_include]
                     
                     }
                     this_gs

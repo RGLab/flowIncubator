@@ -71,76 +71,65 @@ gs_list<-lapply(list.dirs("~/rglab/workspace/flowIncubator/output/gs_toMerge",fu
               ,function(this_folder){
       load_gs(this_folder)
     })
-plot(gs_list[[1]][[1]])
-gslist2 <- GatingSetList(gs_list[c(1,3)])
-pData(ncFlowSet(gs_list[[2]]))$id=NULL
-pData(ncFlowSet(gs_list[[5]]))
 
 gh<-gs_list[[1]][[1]]
 getPopStats(gh)[,2:3]
-setNode(gs_list[[1]],6,"time")
-this_g <- getGate(gh,6)
-str(this_g)
-this_g@boundaries[,1] <- this_g@boundaries[,1] *100 
-setGate(gh,6,this_g,negated=T)
-recompute(gs_list[[1]])
+
 x11()
 plotGate(gh,6,xbin=64,xlim=c(-1000,10000))
-xyplot(`<Pacific Blue-A>`~`Time`,getData(gh),filter=getGate(gh,6),smooth=F,xlim=c(-1000,10000))
+
 #gs_list is a list
-gs_groups <- merge_gs(gs_list)
-#returns a list of GatingSetList objects
-gslist2 <- gs_groups[[1]]
-#gslist2 is a GatingSetList that contains multiple GatingSets and they share the same gating and data structure
-gslist2
-class(gslist2)
-getSamples(gslist2)
+gslist <- .mergeGS(gs_list)
+
+gslist
+class(gslist)
+getSamples(gslist)
 
 
 #reference a GatingSet by numeric index
-gslist2[[1]]
+gslist[[1]]
 #reference a GatingSet by character index
-gslist2[["30104.fcs"]]
+gslist2[["977457.fcs"]]
 
 #loop through all GatingSets within GatingSetList
-lapply(gslist2,getSamples)
+lapply(gslist,getSamples,level=1)
 
 #subset a GatingSetList by [
-getSamples(gslist2[c(4,1)])
-getSamples(gslist2[c(1,4)])
-gslist2[c("30104.fcs")]
+getSamples(gslist[c(4,1)])
+getSamples(gslist[c(1,4)])
+gslist[c("977457.fcs")]
 
 #get flow data from it
-getData(gslist2)
+getData(gslist)
 #get gated flow data from a particular popoulation (by numeric or character index)
-getData(gslist2,4)
+getData(gslist,4)
 
 
 #extract the gates associated with one popoulation
-getGate(gslist2,"3+")
-getGate(gslist2,5)
+getGate(gslist,"3+")
+getGate(gslist,5)
 
 
 #extract the pheno data
-pData(gslist2[2:1])
+pData(gslist[2:1])
 #modify the pheno data
-pd <- pData(gslist2)
+pd <- pData(gslist)
 pd$id <- 1:nrow(pd)
-pData(gslist2) <- pd
-pData(gslist2[3:2])
+pData(gslist) <- pd
+pData(gslist[3:2])
 
 #plot the gate
-plotGate(gslist2[1:2],5,smooth=T)
-plotGate_labkey(gslist2[3:4],4,x="<APC Cy7-A>",y="<PE Tx RD-A>",smooth=T)
+plotGate(gslist[1:2],5,smooth=T)
+plotGate_labkey(gslist[3:4],4,x="<APC Cy7-A>",y="<PE Tx RD-A>",smooth=T)
 
 #remove cerntain gates by loop through GatingSets
-getNodes(gslist2[[1]])
-lapply(gslist2,function(gs)Rm("Excl",gs))
+getNodes(gslist[[1]])
+#lapply(gslist,function(gs)Rm("Excl",gs))
 
 #extract the stats
-getPopStats(gslist2)
+getPopStats(gslist)
 #extract statistics by using getQAStats defined in QUALIFIER package
-res<-getQAStats(gslist2[c(4,2)],isMFI=F,isSpike=F,nslaves=1)
+res<-getQAStats(gslist[c(4,2)],isMFI=F,isSpike=F,nslaves=1)
 
 
 #archive the GatingSetList
