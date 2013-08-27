@@ -209,7 +209,7 @@ setMethod("getIndices",signature=c("GatingSet","name"),function(obj, y, ...){
                 id <- add(obj,bf)
                 )
                 
-              allNodes <- getNodes(gh,isPath=TRUE)
+              allNodes <- getNodes(gh,isPath=TRUE, showHidden = TRUE)
               this_node <- allNodes[id]
               
               
@@ -395,7 +395,7 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
   message("Grouping by Gating tree...")
   node_seq <-unlist(lapply(x,function(this_gs){
             this_gh <- this_gs[[1]]
-            this_nodes <- getNodes(this_gh,isPath=T)
+            this_nodes <- getNodes(this_gh,isPath=T, showHidden = TRUE)
             paste(this_nodes,collapse = "")
             
           }))
@@ -405,7 +405,7 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
 #in order to make trees mergable
 .checkRedundantNodes <- function(gs_groups){
   nodeSet <- lapply(gs_groups,function(this_group){
-              getNodes(this_group[[1]][[1]],isPath=T)
+              getNodes(this_group[[1]][[1]],isPath=T, showHidden = TRUE)
             })
   commonNodes <- Reduce(intersect, nodeSet)
   toRemove <- mapply(nodeSet,gs_groups,FUN=function(thisNodeSet,this_group){
@@ -532,7 +532,7 @@ merge_gs<-function(x,...){
       message("Grouping by Gating tree...")
       node_seq <-unlist(lapply(x,function(this_gs){
                 this_gh <- this_gs[[1]]
-                this_nodes <- getNodes(this_gh,isPath=T)
+                this_nodes <- getNodes(this_gh,isPath=T, showHidden = TRUE)
                 paste(this_nodes,collapse = "")
                 
               }))
