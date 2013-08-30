@@ -79,7 +79,7 @@ x11()
 plotGate(gh,6,xbin=64,xlim=c(-1000,10000))
 
 #gs_list is a list
-gslist <- .mergeGS(gs_list)
+gslist <- flowIncubator:::.mergeGS(gs_list)
 
 gslist
 class(gslist)
@@ -114,7 +114,7 @@ getGate(gslist,5)
 pData(gslist[2:1])
 #modify the pheno data
 pd <- pData(gslist)
-pd$id <- 1:nrow(pd)
+pd$fileid <- 1:nrow(pd)
 pData(gslist) <- pd
 pData(gslist[3:2])
 
@@ -129,11 +129,11 @@ getNodes(gslist[[1]])
 #extract the stats
 getPopStats(gslist)
 #extract statistics by using getQAStats defined in QUALIFIER package
-res<-getQAStats(gslist[c(4,2)],isMFI=F,isSpike=F,nslaves=1)
+res <- getQAStats(gslist[c(4,2)],isMFI=F,isSpike=F,nslaves=1)
 
 
 #archive the GatingSetList
-save_gslist(gslist2, path ="~/rglab/workspace/flowIncubator/output/gslist",overwrite=T)
+save_gslist(gslist, path ="~/rglab/workspace/flowIncubator/output/gslist",overwrite=T)
 gslist2 <- load_gslist(path ="~/rglab/workspace/flowIncubator/output/gslist")
 
 #convert GatingSetList into one GatingSet by rbind2
@@ -148,8 +148,8 @@ plot(gh,"19+ 20+")
 plot(gh,"19+ 20-")
 plot(gh,"19- 20-")
 dev.off()
-g<-flowWorkspace:::.getGraph()
-plot(subGraph(nodes(g)[3:4],g))
+g<-flowWorkspace:::.getGraph(gh)
+plot(graph::subGraph(nodes(g)[3:4],g))
 nodes(g)
 plot(g)
 

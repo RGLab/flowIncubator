@@ -9,7 +9,7 @@
 #' @export 
 #' @importFrom BiocGenerics colnames
 
-plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab=NULL,...){
+plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab=NULL, overlay = NULL, ...){
   #get all childrens
   cids<-getChildren(G[[1]],parentID)
   if(length(cids)>0)
@@ -57,7 +57,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #	browser()
   type <- ifelse(is.null(y), "densityplot","xyplot")
   if(isPlotGate)
-    plotGate(G,cids[ind],formula=formula1,smooth=smooth,xlab=xlab,ylab=ylab, type = type, ...)
+    plotGate(G,cids[ind],formula=formula1,smooth=smooth,xlab=xlab,ylab=ylab, type = type, overlay = overlay, ...)
   else
   {
     fs<-getData(G,parentID)
@@ -69,13 +69,16 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
       ylab <- axisObject$ylab
     }
     if(type == "xyplot"){
+      overlay <- .getOverlay(G, overlay, params = c(x, y))
       xyplot(formula1
           ,fs
           ,smooth=smooth
           ,xlab=xlab
           ,ylab=ylab
           ,scales=axisObject$scales
-          ,...)  
+          ,overlay = overlay
+          ,...
+              )  
     }else{
       densityplot(formula1
           ,fs
