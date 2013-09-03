@@ -1,6 +1,7 @@
 export(getIndiceMat)
 export(merge_gs)
 export(plotGate_labkey)
+export(save_gslist_labkey)
 exportMethods(getData)
 exportMethods(getIndices)
 import(flowWorkspace)

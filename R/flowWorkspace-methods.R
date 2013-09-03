@@ -1,6 +1,7 @@
 #' a wrapper for \code{save_gslist}
 #' @return a copy of original gslist with modified cdf path when cdf == "move"
 #' otherwise, it behaves the same as \code{save_gslist}
+#' @export 
 save_gslist_labkey <- function(gslist, path, cdf, ...){
   
   save_gslist(gslist, path, cdf = cdf, ...)
