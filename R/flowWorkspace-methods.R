@@ -1,3 +1,24 @@
+#' a wrapper for \code{save_gslist}
+#' @return a copy of original gslist with modified cdf path when cdf == "move"
+#' otherwise, it behaves the same as \code{save_gslist}
+save_gslist_labkey <- function(gslist, path, cdf, ...){
+  
+  save_gslist(gslist, path, cdf = cdf, ...)
+  
+  if(cdf == "move"){
+      
+      newListOfGS <- lapply(gslist, function(thisGS){
+      cdfName <- basename(flowData(thisGS)@file)
+      newFullPath <- file.path(path, thisGS@guid, cdfName)
+      flowData(thisGS)@file <-  newFullPath
+      thisGS
+      }, level = 1)
+      
+      GatingSetList(newListOfGS)
+      
+      }
+}
+
 #' plot by prarent index
 #' 
 #' This API is mainly used for labkey module. It takes a parent index instead of the actual gate index.
