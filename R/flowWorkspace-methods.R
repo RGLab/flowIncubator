@@ -141,7 +141,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #' @param n an \code{integer} passed to \code{density} call
 #' @param ... other arguments passed to \code{density} call
 .nearestSample <- function(gs, node, target, source, n = 512, method = c("ks.test","em"), ...){
-  method <- match.arg(method, c("ks.test","em"))
+  method <- match.arg(method)
   
   thisGh <- gs[[target]]
   

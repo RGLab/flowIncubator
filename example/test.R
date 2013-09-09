@@ -215,5 +215,9 @@ refGates <- sapply(refSamples,function(i)getGate(gs[[i]],"MTG_gate"))
 setGate(gs[failedSamples],"MTG_gate",refGates)
 recompute(gs[failedSamples],"MTG_gate")
 
+gslist <- load_gslist("/loc/no-backup/Leo/338ac112e41bc368f3d963e31a374f04/")
+gslist <- save_gslist_labkey(gslist, path = "/loc/no-backup/mike/tmp3",overwrite=T, cdf = "move")
+gslist <- load_gslist("/loc/no-backup/mike/tmp3")
+getData(gslist[[1]])
 
 
