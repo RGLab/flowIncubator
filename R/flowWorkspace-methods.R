@@ -123,7 +123,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 .nearestSamples <- function(gs, node, failed, ...){
   #get samples that do not fail the QA check
 #  browser()
-  samples <- getSamples(gs)
+  samples <- sampleNames(gs)
   failedInd <- match(failed,samples)
   samples <- samples[-c(failedInd)]
   sapply(failed,function(thisTarget){
@@ -289,8 +289,16 @@ getIndiceMat<-function(gh,y){
         ##using the marker name provided by arguments by default
         is_manual_provided <- grep(this_marker,pop_marker_list)
         if(length(is_manual_provided)>0){
+          if(length(is_manual_provided) > 1)
+          {
+            #more than one matched, then do the exact match
+            is_manual_provided <- match(this_marker, pop_marker_list)
+            if(length(is_manual_provided) > 1)
+              stop(this_marker, " is matched with more than one populations")
+          }
+          
           res <- TRUE
-          names(res) <-names(pop_marker_list)[is_manual_provided] 
+          names(res) <- names(pop_marker_list)[is_manual_provided] 
         }else{
           this_matched <- grep(pattern = this_marker, x=markers_selected, fixed=TRUE)
           if(length(this_matched)>1){
@@ -370,7 +378,7 @@ setMethod("getData",signature=c("GatingSet","name"),function(obj, y,pop_marker_l
 setMethod("getData",signature=c("GatingSetList","name"),function(obj, y, pop_marker_list = list(), ...){
       
 #      browser()
-      sapply(getSamples(obj),function(this_sample){
+      sapply(sampleNames(obj),function(this_sample){
             message(this_sample)
             gh <- obj[[this_sample]]
             

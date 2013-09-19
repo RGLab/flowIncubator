@@ -82,6 +82,8 @@ plotGate(gh,6,xbin=64,xlim=c(-1000,10000))
 gslist <- flowIncubator:::.mergeGS(gs_list)
 
 gslist
+keyword(gslist@data[[1]],"Stim")
+keyword(gslist[[1]],"Stim")
 class(gslist)
 getSamples(gslist)
 
@@ -184,6 +186,8 @@ gs2<-clone(gs[3:4])
 setNode(gs2,"CD3","cd3")
 getNodes(gs2[[1]])
 Rm("IgD+cd27+",gs2)
+
+
 gs_groups <- flowIncubator:::.groupByTree(list(gs1,gs2))
 toRemove <- flowIncubator:::.checkRedundantNodes(gs_groups)
 flowIncubator:::.dropRedundantNodes(gs_groups,toRemove)
