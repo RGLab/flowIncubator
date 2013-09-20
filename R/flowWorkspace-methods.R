@@ -473,45 +473,58 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
 }
 
 ##merge gs 
-.mergeGS <- function(this_gslist){
+#' @param force \code{logical} if TRUE, drop any channels if neccessry, 
+#'                          otherwise, be conservative by only dropping unused channels
+.mergeGS <- function(this_gslist, force = FALSE){
   
-        global_colnames <- NULL
+        
+        
         
         if(length(this_gslist) > 1){
+          #find the common colnames
+          col_list <- lapply(this_gslist,function(this_gs)colnames(flowData(this_gs)))
+          global_colnames <- Reduce(intersect, col_list)
+          
+          if(is.null(global_colnames))
+            stop("Can't merge!no common channels.")
+          
           this_gslist <- lapply(this_gslist,function(this_gs){
 #                    browser()
-                    
-                #drop the unused marker from fs                    
                 this_fs <- getData(this_gs)
-                this_fr <- this_fs[[1]]
-                this_pd <- pData(parameters(this_fr))
-                non_na_channel <- unname(!is.na(this_pd[,"desc"]))
-                to_include <- grepl(pattern="[FS]SC|[Tt]ime",this_pd[,"name"])
-                to_include <- to_include |  non_na_channel
-                this_fs_colnames <- colnames(this_fs)
-                if(length(which(to_include)) != nrow(this_pd)){
-                  #drop channels from colnames of flowFrame
-                  message("drop empty channel:",this_pd[!to_include,1])
-                  fr_colnames <- colnames(this_fr)
-                  fr_colnames <- fr_colnames[to_include]
-                  #update the colnames of flowSet accordingly                                   
-                  this_fs_colnames <- this_fs_colnames[match(fr_colnames,this_fs_colnames)]
-                }
-                                 
-                #reorder colnames of fs
-                if(is.null(global_colnames)){
-                  #init global_colnames for the first gs
-                  global_colnames <<- this_fs_colnames
-                }else{
-                  if(setequal(global_colnames,this_fs_colnames)){
-                    #reorder colnames of other gs by global_colnames
-                    this_fs_colnames <- global_colnames 
-                  }else{
-                    stop("colnames of flow data are different!")
+                
+                if(force){
+                  toDrop <- setdiff(colnames(this_fs), global_colnames)
+                  if(length(toDrop) >0)
+                    message("drop ", toDrop)
+                  flowData(this_gs) <- this_fs[,global_colnames]
+                }else
+                {
+                  #drop the unused marker from fs                    
+                  
+                  this_fr <- this_fs[[1]]
+                  this_pd <- pData(parameters(this_fr))
+                  non_na_channel <- unname(!is.na(this_pd[,"desc"]))
+                  to_include <- grepl(pattern="[FS]SC|[Tt]ime",this_pd[,"name"])
+                  to_include <- to_include |  non_na_channel
+                  this_fs_colnames <- colnames(this_fs)
+                  if(length(which(to_include)) != nrow(this_pd)){
+                    #drop channels from colnames of flowFrame
+                    message("drop empty channel:",this_pd[!to_include,1])
+                    fr_colnames <- colnames(this_fr)
+                    fr_colnames <- fr_colnames[to_include]
+                    #update the colnames of flowSet accordingly                                   
+                    this_fs_colnames <- this_fs_colnames[match(fr_colnames,this_fs_colnames)]
                   }
                   
+                  
+                  if(!setequal(global_colnames,this_fs_colnames))
+                    stop("Can't merge!colnames of flow data are different. Use force = TRUE to drop any channels in order to proceed the merging")
                 }
-                flowData(this_gs) <- this_fs[,this_fs_colnames]
+                
+                #reorder colnames of other gs by global_colnames
+                flowData(this_gs) <- this_fs[,global_colnames] 
+                
+                
                 this_gs
               })
         }
