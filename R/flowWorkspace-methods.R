@@ -500,13 +500,14 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
                 }else
                 {
                   #drop the unused marker from fs                    
-                  
+                  this_fs_colnames <- colnames(this_fs)
                   this_fr <- this_fs[[1]]
                   this_pd <- pData(parameters(this_fr))
+                  within_common_chnnl <- this_fs_colnames%in%global_colnames
                   non_na_channel <- unname(!is.na(this_pd[,"desc"]))
                   to_include <- grepl(pattern="[FS]SC|[Tt]ime",this_pd[,"name"])
-                  to_include <- to_include |  non_na_channel
-                  this_fs_colnames <- colnames(this_fs)
+                  to_include <- to_include |  non_na_channel | within_common_chnnl
+                  
                   if(length(which(to_include)) != nrow(this_pd)){
                     #drop channels from colnames of flowFrame
                     message("drop empty channel:",this_pd[!to_include,1])

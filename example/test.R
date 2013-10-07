@@ -79,26 +79,26 @@ x11()
 plotGate(gh,6,xbin=64,xlim=c(-1000,10000))
 
 #gs_list is a list
-gslist <- flowIncubator:::.mergeGS(gs_list)
+gslist <- flowIncubator:::.mergeGS(gs_list,force=T)
 
 gslist
 keyword(gslist@data[[1]],"Stim")
 keyword(gslist[[1]],"Stim")
 class(gslist)
-getSamples(gslist)
+sampleNames(gslist)
 
 
 #reference a GatingSet by numeric index
 gslist[[1]]
 #reference a GatingSet by character index
-gslist2[["977457.fcs"]]
+gslist[["977457.fcs"]]
 
 #loop through all GatingSets within GatingSetList
-lapply(gslist,getSamples,level=1)
+lapply(gslist,sampleNames,level=1)
 
 #subset a GatingSetList by [
-getSamples(gslist[c(4,1)])
-getSamples(gslist[c(1,4)])
+sampleNames(gslist[c(4,1)])
+sampleNames(gslist[c(1,4)])
 gslist[c("977457.fcs")]
 
 #get flow data from it
