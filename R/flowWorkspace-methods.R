@@ -519,7 +519,10 @@ setMethod("getIndices",signature=c("GatingSetList","name"),function(obj, y, ...)
                   
                   
                   if(!setequal(global_colnames,this_fs_colnames))
-                    stop("Can't merge!colnames of flow data are different. Use force = TRUE to drop any channels in order to proceed the merging")
+                    stop("merge failed!These channels are not common across data sets:\n"
+						  , paste0(setdiff(this_fs_colnames,global_colnames))	 
+                          , "\n If they are non-NA channels, try force = TRUE to drop them."
+                          )
                 }
                 
                 #reorder colnames of other gs by global_colnames
