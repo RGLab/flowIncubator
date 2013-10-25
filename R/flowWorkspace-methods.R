@@ -1,22 +1,39 @@
-#' a uility function to filter fcs files based on the channels used by one example FCS file 
+#' a uility function to match fcs files based on the channels used by one example FCS file 
 #' 
-#' It uses \link{read.FCSheader} to read parameters from FCS header and can be used to select
-#' target files before making calls to \code{read.flowSet} or \link{read.ncdfFlowSet}. 
+#' It uses \link{readFCSPar} to read parameters from FCS header to select target files, 
+#' thus be used as a prefilter before \code{read.flowSet} or \link{read.ncdfFlowSet} call. 
 #' 
-#' @param x \code{character} vector giving the list of fcs files 
-#' @param subset \code{character} the example FCS file that contains the channels of interest
+#' @param x \code{character} vector giving the list of fcs files to match 
+#' @param pattern \code{character} the example FCS file that contains the channels of interest
 #' @return a \code{character} vector of fcs files that has the identical channels with \code{subset}
 #' @export 
-setMethod("Subset", signature = c("character","character"), definition = function(x, subset){
+#' @examples 
+#' \dontrun{
+#' grep.FCS(pattern = bcells[2],  x = c(bcells,tcells))
+#'  #return TRUE  TRUE FALSE FALSE
+#' }
+grep.FCS <- function(pattern, x){
 #      browser()
-            
+      targetChnls <- readFCSPar(pattern)
+      unname(sapply(x, function(thisFile){
+                          thisChnls <- readFCSPar(thisFile)
+                          setequal(thisChnls, targetChnls)
+                          
+                        })
+                )
       
-    })
+      
+    }
 #' fast way of getting channel names from fcs file by only reading header
+#' 
+#' This is a convenient wrapper around \link{read.FCSheader} and \code{flowCore:::readFCSgetPar}.
 #' 
 #' @param fileName \code{character}  fcs file name(path)
 #' @return a \code{character} vector channels/parameters used in this FCS
-#' @export 
+#' @export
+#' @examples 
+#' 
+#' readFCSPar(system.file("extdata/0877408774.B08", package = "flowCore"))
 readFCSPar <- function(fileName){
   txt <- flowCore:::read.FCSheader(fileName)[[1]]
   nChannels <- as.integer(txt[["$PAR"]])

@@ -1,6 +1,8 @@
 export(getIndiceMat)
+export(grep.FCS)
 export(merge_gs)
 export(plotGate_labkey)
+export(readFCSPar)
 export(save_gslist_labkey)
 exportMethods(getData)
 exportMethods(getIndices)
