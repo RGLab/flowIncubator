@@ -1,3 +1,30 @@
+#' a uility function to filter fcs files based on the channels used by one example FCS file 
+#' 
+#' It uses \link{read.FCSheader} to read parameters from FCS header and can be used to select
+#' target files before making calls to \code{read.flowSet} or \link{read.ncdfFlowSet}. 
+#' 
+#' @param x \code{character} vector giving the list of fcs files 
+#' @param subset \code{character} the example FCS file that contains the channels of interest
+#' @return a \code{character} vector of fcs files that has the identical channels with \code{subset}
+#' @export 
+setMethod("Subset", signature = c("character","character"), definition = function(x, subset){
+#      browser()
+            
+      
+    })
+#' fast way of getting channel names from fcs file by only reading header
+#' 
+#' @param fileName \code{character}  fcs file name(path)
+#' @return a \code{character} vector channels/parameters used in this FCS
+#' @export 
+readFCSPar <- function(fileName){
+  txt <- flowCore:::read.FCSheader(fileName)[[1]]
+  nChannels <- as.integer(txt[["$PAR"]])
+  channelNames <- unlist(lapply(1:nChannels,function(i)flowCore:::readFCSgetPar(txt,paste("$P",i,"N",sep="")))) 
+  unname(channelNames)
+  
+}
+
 #' a wrapper for \code{save_gslist}
 #' @return a copy of original gslist with modified cdf path when cdf == "move"
 #' otherwise, it behaves the same as \code{save_gslist}
