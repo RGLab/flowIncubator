@@ -25,9 +25,150 @@ setMethod("recompute",c("GatingSet"),function(x, ...){
       selectMethod("recompute", signature = c("GatingSet"))(x, ...)
       
     })
+#' add samples slot to preserve the original sample order (esentially copied from GatingSetList@samples
+setClass("ncdfFlowList",contains="list"
+    , representation = representation(samples = "character")
+)
+setMethod("length",
+    signature=signature(x="ncdfFlowList"),
+    definition=function(x){
+      selectMethod("length", signature = c("ncdfFlowSet"))(x) 
+    })
+
+setMethod("show",
+    signature = signature(object="ncdfFlowList"),
+    definition = function(object) { 
+      cat("An ncdfFlowList with", length(object@.Data),"ncdfFlowSets\n")
+      cat("containing", length(object), " unique samples.") 
+      cat("\n")
+    })
+
+
+setMethod("sampleNames", 
+    signature = signature(object = "ncdfFlowList"),
+    function(object) {
+      object@samples      
+    })
+
+
+#' overwrite the flowWorkspace:::getData to support optional output as ncdfFlowList
+#' eventually we will deprecate "flowSet" output once we have proper plotting API in place (e.g.xyplot, densityplot)
+#' there is potential descrepency between the output data and GatingSetList in terms of sample order in the old implemenation
+#' here we fix it by inheriting the sample order from GatingSetList
+setMethod("getData",signature(obj="GatingSetList",y="numeric"),function(obj,y,max=30, type = c("flowSet", "ncdfFlowList"),...){
+      type <- match.arg(type)
+      samples_orig <- obj@samples
+      if(type == "flowSet"){
+        if(length(sampleNames(obj))>max){
+          stop("You are trying to return a flowSet for more than ", max, " samples!Try to increase this limit by specifing 'max' option if you have enough memory.")
+        }
+        
+        res <- lapply(obj,function(gs){
+              ncfs <- getData(gs,y, ...)
+              as.flowSet(ncfs)
+            }, level =1)
+        fs<-res[[1]]
+        if(length(res)>1){
+          for(i in 2:length(res))
+            fs<-rbind2(fs,res[[i]])
+        }
+        fs[samples_orig]
+      }else{
+        
+        res <- lapply(obj,function(gs){
+              ncfs <- getData(gs,y, ...)
+              ncfs
+            }, level =1)
+        fs <- as(res, "ncdfFlowList")
+        fs@samples <- samples_orig
+      }
+      fs
+    })
+setMethod("[",c(x="ncdfFlowList",i="numeric"),function(x,i,j,...){
+#      browser()
+      x[sampleNames(x)[i]]
+      
+    })
+
+setMethod("[",c(x="ncdfFlowList",i="logical"),function(x,i,j,...){
+      
+      x[sampleNames(x)[i]]
+      
+    })
+setMethod("[",c(x="ncdfFlowList",i="character"),function(x,i,j,...){
+      browser()
+      samples <- sampleNames(x)
+      matchInd <- match(i,samples)
+      noFound <- is.na(matchInd)
+      if(any(noFound)){
+        stop(i(noFound), "not found in GatingSetList!")
+      }
+      res <- lapply(x,function(gs){
+#            browser()
+            this_samples <- sampleNames(gs)
+            ind <- match(i,this_samples)
+            this_subset <- i[!is.na(ind)] 
+            if(length(this_subset)>0){
+              return (gs[this_subset])
+            }else{
+              NULL
+            }
+          }, level =1)
+      res <- res[!unlist(lapply(res,is.null))]
+      res <- GatingSetList(res)
+      res@samples <- samples[matchInd]
+      res
+    })
+setMethod("[",
+		signature=signature(x="ncdfFlowList"),
+		definition=function(x, i, j, ...)
+		{
+          browser()
+			if(length(i) != 1)
+				stop("subscript out of bounds (index must have length 1)")
+#			
+			y<-x@datalist
+			groupName<-if(is.numeric(i)) names(y)[[i]] else i
+			ncfs <- y[groupName]
+			return(ncfs)
+		})
 
 
 
+setMethod("split",
+    signature=signature(x="ncdfFlowList",
+        f="factor"),
+    definition=function(x, f, ...)
+    {
+      
+      if(!is.atomic(f) || length(f)!=length(x))
+        stop("split factor must be same length as flowSet",
+            call.=FALSE) 
+      gind <- split(1:length(f), f, drop=TRUE)
+      res <- vector(mode="list", length=length(gind))
+      
+      for(g in seq_along(gind)){
+        browser()
+        ncfs<-x[sampleNames(x)[gind[[g]]]]
+        
+        res[[g]] <-ncfs
+        
+        phenoData(res[[g]])$split <- levels(f)[g]
+        varMetadata(res[[g]])["split", "labelDescription"] <-
+            "Split"
+      }
+      names(res) <- names(gind)
+      
+      return(res)
+    })
+
+setMethod("split",
+    signature=signature(x="ncdfFlowList",
+        f="character"),
+    definition=function(x, f, ...)
+    {
+      selectMethod("split", signature = c("ncdfFlowSet", "character"))(x, f, ...)
+    })	
 #' a uility function to match fcs files based on the channels used by one example FCS file 
 #' 
 #' It uses \link{readFCSPar} to read parameters from FCS header to select target files, 
