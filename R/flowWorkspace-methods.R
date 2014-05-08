@@ -437,7 +437,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
   message("Grouping by Gating tree...")
   node_seq <-unlist(lapply(x,function(this_gs){
             this_gh <- this_gs[[1]]
-            this_nodes <- getNodes(this_gh,isPath=T, showHidden = TRUE)
+            this_nodes <- getNodes(this_gh, showHidden = TRUE)
             paste(this_nodes,collapse = "")
             
           }))
@@ -447,7 +447,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #in order to make trees mergable
 .checkRedundantNodes <- function(gs_groups){
   nodeSet <- lapply(gs_groups,function(this_group){
-              getNodes(this_group[[1]][[1]],isPath=T, showHidden = TRUE)
+              getNodes(this_group[[1]][[1]], showHidden = TRUE)
             })
   commonNodes <- Reduce(intersect, nodeSet)
   toRemove <- mapply(nodeSet,gs_groups,FUN=function(thisNodeSet,this_group){
@@ -591,7 +591,7 @@ merge_gs<-function(x,...){
       message("Grouping by Gating tree...")
       node_seq <-unlist(lapply(x,function(this_gs){
                 this_gh <- this_gs[[1]]
-                this_nodes <- getNodes(this_gh,isPath=T, showHidden = TRUE)
+                this_nodes <- getNodes(this_gh, showHidden = TRUE)
                 paste(this_nodes,collapse = "")
                 
               }))
