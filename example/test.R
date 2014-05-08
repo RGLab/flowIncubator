@@ -137,12 +137,16 @@ res <- getQAStats(gslist[c(4,2)],isMFI=F,isSpike=F,nslaves=1)
 #archive the GatingSetList
 save_gslist(gslist, path ="~/rglab/workspace/flowIncubator/output/gslist",overwrite=T)
 library(flowWorkspace)
+library(devtools)
+load_all("~/rglab/workspace/flowWorkspace")
 gslist2 <- load_gslist(path ="~/rglab/workspace/flowIncubator/output/gslist")
-nclist <- getData(gslist2, 10, type = "ncdfFlowList")
-nclist
-nclist[1:2]
-split(nclist, f = factor(c(1,2,3,1,2,3,1,2,3)))
-pData(nclist)
+nclist <- getData(gslist2, 6)
+
+nclist[[1, use.exprs = T]]
+nclist[["977457.fcs"]]
+sampleNames(nclist)
+
+
 #convert GatingSetList into one GatingSet by rbind2
 gs_merged2 <- rbind2(gslist2,ncdfFile=path.expand(tempfile(tmpdir="~/rglab/workspace/flowIncubator/output/",fileext=".nc")))
 gs_merged2
@@ -228,5 +232,6 @@ gslist <- load_gslist("/loc/no-backup/Leo/338ac112e41bc368f3d963e31a374f04/")
 gslist <- save_gslist_labkey(gslist, path = "/loc/no-backup/mike/tmp3",overwrite=T, cdf = "move")
 gslist <- load_gslist("/loc/no-backup/mike/tmp3")
 getData(gslist[[1]])
+
 
 
