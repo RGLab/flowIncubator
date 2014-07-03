@@ -1,3 +1,58 @@
+#' post process gs to fix channel name discrepancy caused by letter case:
+#' 1.between gates defined in xml and fcs
+#' 2.gates with xml
+#' 
+#' The assumption is the channel names is consistent across samples in FCS files.
+#' So basically it loop through all gates and match up the gate parameters to 
+#' the flow data and update it when needed.
+fixChannelNames <- function(gs){
+  
+  coln <- colnames(getData(gs))
+  for(sn in sampleNames(gs))
+  {
+    gh <- gs[[sn]]
+    nodes <- getNodes(gh)
+    for(node in nodes[-1])
+    {
+      
+      g <- getGate(gh, node)
+      
+      if(class(g) != "booleanFilter")
+      {
+        isUpdate <- FALSE
+        
+        param <- parameters(g)
+        misMatch <- which(is.na(match(param, coln)))
+        #update each mismatched channel
+        for(i in misMatch)
+        {
+          oldN <- param[i]
+          matchInd <- match(tolower(oldN), tolower(coln))
+          if(is.na(matchInd))
+            stop(oldN, "not found in flow Data")
+          else{
+            isUpdate <- TRUE
+            newN <- coln[matchInd]
+            param[i] <- newN
+            
+          }
+        }
+        if(isUpdate){
+          #update the gate
+          oldParam <- parameters(g)
+          
+          message(paste(oldParam, col = ",")," --> ", paste(param, col = ","), "for ", node)
+          parameters(g) <- param
+          setGate(gh, node, g)  
+        }
+        
+      }
+      
+    }
+    message("done")
+  }
+}
+
 #' a uility function to match fcs files based on the channels used by one example FCS file 
 #' 
 #' It uses \link{readFCSPar} to read parameters from FCS header to select target files, 
