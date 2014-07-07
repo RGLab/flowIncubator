@@ -1,3 +1,4 @@
+export(fixChannelNames)
 export(getIndiceMat)
 export(grep.FCS)
 export(merge_gs)
