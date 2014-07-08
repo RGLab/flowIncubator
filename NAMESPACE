@@ -1,4 +1,4 @@
 export(fixChannelNames)
 export(getIndiceMat)
 export(getKeywords)
-
+importFrom(data.table,setnames)
