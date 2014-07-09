@@ -7,16 +7,16 @@ swapChannelMarker <- function(gs){
     fs@frames[[sn]] <- swapChannelMarker_flowframe(fr, use.exprs = FALSE)
   }
   
-  newColNames <- colnames(fs@frames[[sn]])
-  colnames(fs) <- newColNames #assuming the order of colnames between fr and fs were consistent
+  newColNames <- flowCore::colnames(fs@frames[[sn]])
+  flowCore::colnames(fs) <- newColNames #assuming the order of colnames between fr and fs were consistent
   flowData(gs) <- fs
   
   fr <- fs@frames[[sn]]
   pd <- pData(parameters(fr))
   pd <- pd[!is.na(pd$desc), 2:1]
   colnames(pd) <- c("old", "new")
-#  browser()
-  gs <- updateGateParameter(gs, pd)
+  
+  updateGateParameter(gs, pd)
   flowData(gs) <- fs
   gs
 }
@@ -37,7 +37,7 @@ swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
   fr_rownames <- rownames(pData(parameters(fr)))
   
   # Preprocesses each of the columns in the flow_frame
-  for (j in seq_len(length(colnames(fr)))) {
+  for (j in seq_len(length(flowCore::colnames(fr)))) {
     
     marker_idx <- paste0(fr_rownames[j], "S")
     channel_idx <- paste0(fr_rownames[j], "N")
@@ -62,7 +62,7 @@ swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
   }
   
   if(use.exprs)
-    colnames(exprs(fr)) <- colnames(fr)
+    colnames(exprs(fr)) <- flowCore::colnames(fr)
   
   # Subset to markers of interest
   fr
@@ -71,63 +71,52 @@ swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
 
 #' update the gate parameters for a GatingSet
 #' 
-#' It actually reconstructs a new GatingSet by 
-#' copying all the gates with their parameters changed 
+#' It actually reconstructs all the gates with their parameters changed 
 #' based on given mapping between the old and new channel names.
+#' TODO: we want to have API to only update gate parameters instead of entire gate object.  
 #' 
 #' 
 #' @param gs \code{GatingSet} to work with
 #' @param map \code{data.frame} contains the mapping between old and new channel names
-#' @return  a new \code{GatingSet} object with the new gate added but share the same flow data with the input 'GatingSet'
 updateGateParameter <- function(gs, map){
   
   if(!identical(colnames(map), c("old", "new")))
     stop("'map' must contain two columns: 'old' and 'new'!")
   
-  #copy the entire tree structure
-  message("cloning tree structure...")
-  clone <- gs
-  clone@pointer <- .Call("R_CloneGatingSet",gs@pointer,sampleNames(gs))
-  #clear the tree
   nodes <- getNodes(gs)
-  toRm <- getChildren(gs[[1]], "root")
-  for(thisRm in toRm)Rm(thisRm, clone)
-  
-  nodesToadd <- nodes[-1]
-  
-  for(node in nodesToadd)
+  message("updating gates")
+  for(node in nodes[-1])
   {
-        #copy the other nodes to its parent
-        thisParent <- getParent(gs, node)
-        popName <- basename(node)
-        
         for(sn in sampleNames(gs))
         {
               gh <- gs[[sn]]
               gate <- getGate(gh, node)
               
               if(!flowWorkspace:::.isBoolGate(gh,node)){
-                params <- parameters(gate)
-                
+                params <- as.vector(parameters(gate))
+#                browser()
                 #update according to the map
-                params <- sapply(params, function(param){
+                new_params <- as.vector(sapply(params, function(param){
                       param <- gsub("<|>", "", param) #remove prefix
                       ind <- match(param, map[, "old"])
                       ifelse(is.na(ind), param, map[ind, "new"])
-                    })
-                names(params) <- params                          
-                parameters(gate) <- params
+                    }))
+                if(!identical(new_params, params)){
+                  cat(".")
+                  names(new_params) <- new_params                          
+                  parameters(gate) <- new_params
+                  
+                  setGate(gh, node, gate)  
+                }
                 
               }
-              negated <- flowWorkspace:::isNegated(gh, node)
-                
-              add(clone[[sn]], gate, name = popName, parent = thisParent, negated = negated)      
+              
+              
+      
         }  
         
    }
   
-  recompute(clone)
-  clone
 }
 
 #' post process gs to fix channel name discrepancy caused by letter case:
