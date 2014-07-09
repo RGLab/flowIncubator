@@ -1,3 +1,134 @@
+
+swapChannelMarker <- function(gs){
+  fs <- getData(gs)
+  
+  for(sn in sampleNames(fs)){
+    fr <- fs@frames[[sn]]
+    fs@frames[[sn]] <- swapChannelMarker_flowframe(fr, use.exprs = FALSE)
+  }
+  
+  newColNames <- colnames(fs@frames[[sn]])
+  colnames(fs) <- newColNames #assuming the order of colnames between fr and fs were consistent
+  flowData(gs) <- fs
+  
+  fr <- fs@frames[[sn]]
+  pd <- pData(parameters(fr))
+  pd <- pd[!is.na(pd$desc), 2:1]
+  colnames(pd) <- c("old", "new")
+#  browser()
+  gs <- updateGateParameter(gs, pd)
+  flowData(gs) <- fs
+  gs
+}
+
+#' Preprocesses a Cytotrol flowFrame object
+#'
+#' Our goal here is to use swap the marker names and the channel names within a
+#' \code{flowFrame} object to ensure that the \code{flowFrame} objects across
+#' centers can be merged into a single \code{flowSet}.
+#'
+#'
+#' @param fr the \code{flowFrame} object to preprocess
+#' @return the updated \code{flowFrame} object containing only the markers of
+#' interest
+swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
+  
+  
+  fr_rownames <- rownames(pData(parameters(fr)))
+  
+  # Preprocesses each of the columns in the flow_frame
+  for (j in seq_len(length(colnames(fr)))) {
+    
+    marker_idx <- paste0(fr_rownames[j], "S")
+    channel_idx <- paste0(fr_rownames[j], "N")
+    
+    marker <- description(fr)[[marker_idx]]
+    channel <- description(fr)[[channel_idx]]
+    
+    # In the case the marker name is given, we swap the marker and channel
+    # names.
+    if (!is.null(marker)) {
+      # Converts the marker names to a common name
+      marker <- as.vector(marker)
+      
+      # Updates the channel with the marker
+      description(fr)[[channel_idx]] <- marker 
+      pData(parameters(fr))[j, "name"] <- marker
+      
+      # Updates the marker information in the flow_frame with the channel
+      description(fr)[[marker_idx]] <- channel
+      pData(parameters(fr))[j, "desc"] <- channel
+    }
+  }
+  
+  if(use.exprs)
+    colnames(exprs(fr)) <- colnames(fr)
+  
+  # Subset to markers of interest
+  fr
+}
+
+
+#' update the gate parameters for a GatingSet
+#' 
+#' It actually reconstructs a new GatingSet by 
+#' copying all the gates with their parameters changed 
+#' based on given mapping between the old and new channel names.
+#' 
+#' 
+#' @param gs \code{GatingSet} to work with
+#' @param map \code{data.frame} contains the mapping between old and new channel names
+#' @return  a new \code{GatingSet} object with the new gate added but share the same flow data with the input 'GatingSet'
+updateGateParameter <- function(gs, map){
+  
+  if(!identical(colnames(map), c("old", "new")))
+    stop("'map' must contain two columns: 'old' and 'new'!")
+  
+  #copy the entire tree structure
+  message("cloning tree structure...")
+  clone <- gs
+  clone@pointer <- .Call("R_CloneGatingSet",gs@pointer,sampleNames(gs))
+  #clear the tree
+  nodes <- getNodes(gs)
+  toRm <- getChildren(gs[[1]], "root")
+  for(thisRm in toRm)Rm(thisRm, clone)
+  
+  nodesToadd <- nodes[-1]
+  
+  lapply(nodesToadd, function(node){
+        #copy the other nodes to its parent
+        thisParent <- getParent(gs, node)
+        popName <- basename(node)
+        
+        lapply(sampleNames(gs),function(sn){
+              gh <- gs[[sn]]
+              gate <- getGate(gh, node)
+              
+              if(!flowWorkspace:::.isBoolGate(gh,node)){
+                params <- parameters(gate)
+                
+                #update according to the map
+                params <- sapply(params, function(param){
+                      param <- gsub("<|>", "", param) #remove prefix
+                      ind <- match(param, map[, "old"])
+                      ifelse(is.na(ind), param, map[ind, "new"])
+                    })
+                names(params) <- params                          
+                parameters(gate) <- params
+                
+              }
+              negated <- flowWorkspace:::isNegated(gh, node)
+              if(popName == "Time, <PE-A> subset")
+                
+              add(clone[[sn]], gate, name = popName, parent = thisParent, negated = negated)      
+            })  
+        
+      })
+  
+  recompute(clone)
+  clone
+}
+
 #' post process gs to fix channel name discrepancy caused by letter case:
 #' 1.between gates defined in xml and fcs
 #' 2.gates with xml

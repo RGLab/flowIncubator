@@ -1,3 +1,5 @@
+export(updateGateParameter)
+export(swapChannelMarker)
 export(fixChannelNames)
 export(getIndiceMat)
 export(grep.FCS)
