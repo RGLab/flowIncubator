@@ -95,12 +95,14 @@ updateGateParameter <- function(gs, map){
   
   nodesToadd <- nodes[-1]
   
-  lapply(nodesToadd, function(node){
+  for(node in nodesToadd)
+  {
         #copy the other nodes to its parent
         thisParent <- getParent(gs, node)
         popName <- basename(node)
         
-        lapply(sampleNames(gs),function(sn){
+        for(sn in sampleNames(gs))
+        {
               gh <- gs[[sn]]
               gate <- getGate(gh, node)
               
@@ -118,12 +120,11 @@ updateGateParameter <- function(gs, map){
                 
               }
               negated <- flowWorkspace:::isNegated(gh, node)
-              if(popName == "Time, <PE-A> subset")
                 
               add(clone[[sn]], gate, name = popName, parent = thisParent, negated = negated)      
-            })  
+        }  
         
-      })
+   }
   
   recompute(clone)
   clone
