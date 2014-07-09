@@ -87,6 +87,7 @@ updateGateParameter <- function(gs, map){
   message("updating gates")
   for(node in nodes[-1])
   {
+      message(".", appendLF = FALSE)
         for(sn in sampleNames(gs))
         {
               gh <- gs[[sn]]
@@ -102,7 +103,7 @@ updateGateParameter <- function(gs, map){
                       ifelse(is.na(ind), param, map[ind, "new"])
                     }))
                 if(!identical(new_params, params)){
-                  cat(".")
+                  
                   names(new_params) <- new_params                          
                   parameters(gate) <- new_params
                   
@@ -116,7 +117,7 @@ updateGateParameter <- function(gs, map){
         }  
         
    }
-  
+   message("done")
 }
 
 #' post process gs to fix channel name discrepancy caused by letter case:
