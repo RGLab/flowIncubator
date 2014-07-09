@@ -1,6 +1,8 @@
+importFrom(flowWorkspace, getKeywords)
+importFrom(data.table,setnames)
 export(updateGateParameter)
 export(swapChannelMarker)
 export(fixChannelNames)
 export(getIndiceMat)
-export(getKeywords)
-importFrom(data.table,setnames)
+exportMethods(getKeywords)
+
