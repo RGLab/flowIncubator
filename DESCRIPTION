@@ -15,4 +15,5 @@ Imports:
 Collate:
     'flowWorkspace-methods.R'
     'flowIncubator.R'
+    'getKeywords.R'
 biocViews: FlowCytometry, DataImport, Preprocessing, DataRepresentation
