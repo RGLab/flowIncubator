@@ -78,14 +78,15 @@ swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
 #' 
 #' @param gs \code{GatingSet} to work with
 #' @param map \code{data.frame} contains the mapping between old and new channel names
-updateGateParameter <- function(gs, map){
+#' @param nodes \code{character} vector to specify the nodes to be updated. Default is all the nodes
+updateGateParameter <- function(gs, map, nodes = NULL){
   
   if(!identical(colnames(map), c("old", "new")))
     stop("'map' must contain two columns: 'old' and 'new'!")
-  
-  nodes <- getNodes(gs)
+  if(is.null(nodes))
+    nodes <- getNodes(gs)[-1]
   message("updating gates")
-  for(node in nodes[-1])
+  for(node in nodes)
   {
       message(".", appendLF = FALSE)
         for(sn in sampleNames(gs))
@@ -100,7 +101,7 @@ updateGateParameter <- function(gs, map){
                 new_params <- as.vector(sapply(params, function(param){
                       param <- gsub("<|>", "", param) #remove prefix
                       ind <- match(param, map[, "old"])
-                      ifelse(is.na(ind), param, map[ind, "new"])
+                      ifelse(is.na(ind), param, as.character(map[ind, "new"]))
                     }))
                 if(!identical(new_params, params)){
                   
@@ -434,20 +435,46 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 }
 
 
-##################################################
-#merge GatingSets into groups based on their gating schemes
-#Be careful that the splitted resluts still points to the original data set!!
-#drop the unused channels if needed before merging them 
-##########################################################
+
+#' split GatingSets into groups based on their gating schemes
+#' Be careful that the splitted resluts still points to the original data set!!
+#' 
+#' It allows isomorphism in Gating tree and ignore difference in hidden nodes
+#' i.e. tree is considered to be the same
+#' as long as getNodes(gh, path = "auto", showHidden = F) returns the same set
+#' 
+#' @param x a list of GatingSets
 .groupByTree <- function(x){
   message("Grouping by Gating tree...")
   node_seq <-unlist(lapply(x,function(this_gs){
             this_gh <- this_gs[[1]]
-            this_nodes <- getNodes(this_gh, showHidden = TRUE)
-            paste(this_nodes,collapse = "")
-            
+            this_nodes <- getNodes(this_gh, path = "auto")
+            #sort it alphabetically
+            this_nodes <- sort(this_nodes)
+            paste0(this_nodes, collapse = "|")
           }))
   split(x,node_seq)
+}
+
+#' split GatingSets into groups based on their flow channels
+#' 
+#' Sometime it is gates are defined on the different dimensions
+#' across different GatingSets, (e.g. `FSC-W` or `SSC-H` may be used for Y axis for cytokines)
+#' These difference in dimensions may not be critical since they are usually just used for visualization(istead of thresholding events)
+#' But this prevents the gs from merging because they may not be collected across batces
+#' Thus we have to separate them if we want to visualize the gates.
+#' 
+#' @param x a list of GatingSets
+.groupByChannels <- function(x){
+  message("Grouping by channels...")
+  key <- unlist(lapply(x,function(this_gs){
+            this_gh <- this_gs[[1]]
+            cols <- flowCore::colnames(getData(this_gs))
+            #reorder it alphabetically
+            cols <- sort(cols)
+            paste0(cols, collapse = "|")
+          }))
+  split(x,key)
 }
 #try to determine the redundant terminal nodes that can be removed
 #in order to make trees mergable
@@ -486,7 +513,32 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
       })
   
 }
-
+#' remove the channels from flow data that are not used by gates
+#' 
+#' @param ... other arugments passed to getNodes method
+.dropRedundantChannels <- function(gs, ...){
+  nodes <- getNodes(gs, ...)[-1]
+  gh <- gs[[1]]
+  params <- unlist(lapply(nodes, function(node){
+        g <- getGate(gh, node)
+        if(class(g) != "booleanFilter"){
+         as.vector(parameters(g))  
+        }
+        
+      }))
+  params <- unique(params)
+  fs <- flowData(gs)
+  cols <- flowCore::colnames(fs)
+  toDrop <- setdiff(cols, params)
+  if(length(toDrop) >0){
+    message("drop ", paste0(toDrop, collapse = ", "))
+    ind <- match(toDrop, cols)
+    cols <- cols[-ind]
+    flowData(gs) <- fs[, cols]
+  }
+  gs  
+  
+}
 ##merge gs 
 #' @param force \code{logical} if TRUE, drop any channels if neccessry, 
 #'                          otherwise, be conservative by only dropping unused channels
