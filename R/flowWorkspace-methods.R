@@ -1,3 +1,9 @@
+getDescendants <- function(gh, node){
+  nodelist <- new.env(parent=emptyenv())
+  nodelist$v <-integer()
+  flowWorkspace:::.getAllDescendants(gslist[[1]], node, nodelist)
+  nodelist$v
+}
 
 swapChannelMarker <- function(gs){
   fs <- getData(gs)
