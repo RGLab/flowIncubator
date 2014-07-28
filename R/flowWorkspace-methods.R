@@ -261,7 +261,8 @@ save_gslist_labkey <- function(gslist, path, cdf, ...){
 
 plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab=NULL, overlay = NULL, ...){
   #get all childrens
-  cids<-getChildren(G[[1]],parentID)
+  
+  cids <- getChildren(G[[1]], parentID, showHidden = FALSE)
   if(length(cids)>0)
   {
     #try to match to projections
