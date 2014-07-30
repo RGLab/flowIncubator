@@ -1,3 +1,31 @@
+#' directly update node indices without changing gates
+#' 
+#' It is useful when we want to alter the popluation at events level yet
+#' without removing or adding the existing gates. 
+#' 
+#' @param x \code{GatingHierarchy} object
+#' @param y \code{character} node name or path
+#' @param z \code{logical} vector as local event indices relative to node \code{y} 
+setMethod("updateIndices",
+    signature=signature(x="GatingHierarchy",y="character",z="logical"), 
+    definition=function(x,y,z)
+    {
+      
+      nodeID <- flowWorkspace:::.getNodeInd(x, y)
+      #get original indices
+      pInd <- getIndices(x, y)
+      #update it with the new one
+      #convert to global one by combining it with parent indice
+      pInd[which(pInd)] <- z
+      #added it to gating tree
+      sn <- sampleNames(x)
+      ptr <- x@pointer
+      .Call("R_setIndices", ptr, sn, nodeID-1, pInd, PACKAGE = "flowWorkspace")
+    })
+
+
+
+
 getDescendants <- function(gh, node){
   nodelist <- new.env(parent=emptyenv())
   nodelist$v <-integer()
