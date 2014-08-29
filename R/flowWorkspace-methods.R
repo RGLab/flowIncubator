@@ -133,8 +133,8 @@ updateGateParameter <- function(gs, map, nodes = NULL){
 #                browser()
                 #update according to the map
                 new_params <- as.vector(sapply(params, function(param){
-                      param <- gsub("<|>", "", param) #remove prefix
-                      ind <- match(param, map[, "old"])
+                      param_to_match <- gsub("<|>", "", param) #remove prefix
+                      ind <- match(param_to_match, map[, "old"])
                       ifelse(is.na(ind), param, as.character(map[ind, "new"]))
                     }))
                 if(!identical(new_params, params)){
