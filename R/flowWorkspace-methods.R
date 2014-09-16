@@ -29,7 +29,7 @@ setMethod("updateIndices",
 getDescendants <- function(gh, node){
   nodelist <- new.env(parent=emptyenv())
   nodelist$v <-integer()
-  flowWorkspace:::.getAllDescendants(gslist[[1]], node, nodelist)
+  flowWorkspace:::.getAllDescendants(gh, node, nodelist)
   nodelist$v
 }
 
@@ -471,116 +471,13 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 
 
 
-#' split GatingSets into groups based on their gating schemes
-#' Be careful that the splitted resluts still points to the original data set!!
-#' 
-#' It allows isomorphism in Gating tree and ignore difference in hidden nodes
-#' i.e. tree is considered to be the same
-#' as long as getNodes(gh, path = "auto", showHidden = F) returns the same set
-#' 
-#' @param x a list of GatingSets
-.groupByTree <- function(x){
-  message("Grouping by Gating tree...")
-  node_seq <-unlist(lapply(x,function(this_gs){
-            this_gh <- this_gs[[1]]
-            this_nodes <- getNodes(this_gh, path = "auto")
-            #sort it alphabetically
-            this_nodes <- sort(this_nodes)
-            paste0(this_nodes, collapse = "|")
-          }))
-  split(x,node_seq)
-}
-
-#' split GatingSets into groups based on their flow channels
-#' 
-#' Sometime it is gates are defined on the different dimensions
-#' across different GatingSets, (e.g. `FSC-W` or `SSC-H` may be used for Y axis for cytokines)
-#' These difference in dimensions may not be critical since they are usually just used for visualization(istead of thresholding events)
-#' But this prevents the gs from merging because they may not be collected across batces
-#' Thus we have to separate them if we want to visualize the gates.
-#' 
-#' @param x a list of GatingSets
-.groupByChannels <- function(x){
-  message("Grouping by channels...")
-  key <- unlist(lapply(x,function(this_gs){
-            this_gh <- this_gs[[1]]
-            cols <- flowCore::colnames(getData(this_gs))
-            #reorder it alphabetically
-            cols <- sort(cols)
-            paste0(cols, collapse = "|")
-          }))
-  split(x,key)
-}
-#try to determine the redundant terminal nodes that can be removed
-#in order to make trees mergable
-.checkRedundantNodes <- function(gs_groups){
-  nodeSet <- lapply(gs_groups,function(this_group){
-              getNodes(this_group[[1]][[1]], showHidden = TRUE)
-            })
-  commonNodes <- Reduce(intersect, nodeSet)
-  toRemove <- mapply(nodeSet,gs_groups,FUN=function(thisNodeSet,this_group){
-                  nodesToRm <- setdiff(thisNodeSet,commonNodes)
-                  #check if those nodes are terminal
-                  isTerminal <- sapply(nodesToRm,function(thisNode){
-                            length(getChildren(this_group[[1]][[1]],thisNode))==0
-                          })
-#                  browser()
-                  if(!all(isTerminal)){
-                    stop("Can't drop the non-terminal nodes",nodesToRm[!isTerminal])
-                  }    
-                  nodesToRm
-                })
-    toRemove       
-}
-
-#drop the terminal nodes
-.dropRedundantNodes <- function(gs_groups,toRemove){
-  mapply(toRemove,gs_groups,FUN=function(thisNodeSet,this_group){
-        if(length(thisNodeSet)>0){
-          lapply(thisNodeSet,function(thisNode){
-#                browser()
-                message("Removing ", thisNode)
-                lapply(this_group,function(this_gs){
-                      Rm(thisNode,this_gs)
-                    })
-              })
-        }
-      })
-  
-}
-#' remove the channels from flow data that are not used by gates
-#' 
-#' @param ... other arugments passed to getNodes method
-.dropRedundantChannels <- function(gs, ...){
-  nodes <- getNodes(gs, ...)[-1]
-  gh <- gs[[1]]
-  params <- unlist(lapply(nodes, function(node){
-        g <- getGate(gh, node)
-        if(class(g) != "booleanFilter"){
-         as.vector(parameters(g))  
-        }
-        
-      }))
-  params <- unique(params)
-  fs <- flowData(gs)
-  cols <- flowCore::colnames(fs)
-  toDrop <- setdiff(cols, params)
-  if(length(toDrop) >0){
-    message("drop ", paste0(toDrop, collapse = ", "))
-    ind <- match(toDrop, cols)
-    cols <- cols[-ind]
-    flowData(gs) <- fs[, cols]
-  }
-  gs  
-  
-}
 ##merge gs 
 #' @param force \code{logical} if TRUE, drop any channels if neccessry, 
 #'                          otherwise, be conservative by only dropping unused channels
 .mergeGS <- function(this_gslist, force = FALSE){
   
         
-        
+        .Defunct("dropRedundantChannels and dropRedundantNodes")
         
         if(length(this_gslist) > 1){
           #find the common colnames
@@ -680,7 +577,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #' @export 
 merge_gs<-function(x,...){
 #      browser()
-
+  .Defunct("dropRedundantChannels and dropRedundantNodes")
       message("Grouping by Gating tree...")
       node_seq <-unlist(lapply(x,function(this_gs){
                 this_gh <- this_gs[[1]]
