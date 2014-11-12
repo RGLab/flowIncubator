@@ -290,7 +290,7 @@ save_gslist_labkey <- function(gslist, path, cdf, ...){
 plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab=NULL, overlay = NULL, ...){
   #get all childrens
   
-  cids <- getChildren(G[[1]], parentID, showHidden = FALSE)
+  cids <- getChildren(G[[1]], parentID, showHidden = FALSE, path = "auto")
   if(length(cids)>0)
   {
     #try to match to projections
@@ -619,4 +619,34 @@ merge_gs<-function(x,...){
         
       
     }
-      
+
+plotGateM <- function(formula,gs, parent, children, ...){
+  
+  
+#' get parent data
+  fsParent <- lapply(nodes, function(node){
+        fs <- getData(gs, parent)
+        fs <- fs@data[[1]]
+        fs <-as.flowSet(fs)
+        pData(fs)[,"subset"] <- node
+        sn <- sampleNames(fs)
+        sampleNames(fs) <- paste0(sn, node)
+        fs
+      })
+  fsParent <- ncdfFlowList(fsParent)
+  
+  #' get overlay data
+  fslist <- lapply(children, function(node){
+        fs <- getData(gs, node)
+        fs <- fs@data[[1]]
+        fs <-as.flowSet(fs)
+        pData(fs)[,"subset"] <- node
+        sn <- sampleNames(fs)
+        sampleNames(fs) <- paste0(sn, node)
+        fs
+      })
+  fslist <- ncdfFlowList(fslist)
+  
+  xyplot(formula, fsParent, overlay = fslist, ...)
+  
+}    
