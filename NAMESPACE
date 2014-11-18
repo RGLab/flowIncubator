@@ -3,9 +3,6 @@ importFrom(flowWorkspace, getKeywords)
 importFrom(data.table,setnames)
 importMethodsFrom(flowCore,"colnames<-")
 importMethodsFrom(flowCore,colnames)
-export(updateGateParameter)
-export(swapChannelMarker)
-export(fixChannelNames)
-export(getIndiceMat)
-exportMethods(getKeywords)
+
+exportPattern("^[^\\.]")
 
