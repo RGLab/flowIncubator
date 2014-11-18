@@ -287,7 +287,7 @@ save_gslist_labkey <- function(gslist, path, cdf, ...){
 #' @export 
 #' @importFrom BiocGenerics colnames
 
-plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab=NULL, overlay = NULL, ...){
+plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab=NULL, overlay = NULL, overlay.symbol = NULL, key = NULL, ...){
   #get all childrens
   
   cids <- getChildren(G[[1]], parentID, showHidden = FALSE, path = "auto")
@@ -333,7 +333,7 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
   if(!is.null(cond))
     formula1<-paste(formula1,cond,sep="|")
   formula1 <- as.formula(formula1)
-#	browser()
+	
   type <- ifelse(is.null(y), "densityplot","xyplot")
   if(isPlotGate)
     plotGate(G,cids[ind],formula=formula1,smooth=smooth,xlab=xlab,ylab=ylab, type = type, overlay = overlay, ...)
@@ -348,14 +348,40 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
       ylab <- axisObject$ylab
     }
     if(type == "xyplot"){
-      overlay <- flowWorkspace:::.getOverlay(G, overlay, params = c(x, y))
+#      browser()
+      if(!is.null(overlay)){
+        if(is.null(overlay.symbol)){
+#            browser()
+          # set symbol color automatically if not given
+          nOverlay <- length(overlay)
+          overlay.fill <- RColorBrewer::brewer.pal(9,"Set1")[1:nOverlay]
+          names(overlay.fill) <- overlay
+          overlay.symbol <- sapply(overlay.fill, function(col)list(fill = col), simplify = FALSE)
+        }
+        #set legend automatically if it is not given
+        if(is.null(key)){
+          
+          key = list(text = list(names(overlay.symbol), cex = 0.6)
+              , points = list(col = sapply(overlay.symbol, "[[", "fill") 
+                  , pch = 19
+                  , cex = 0.5) 
+              , columns = length(overlay.symbol)
+              , between = 0.3
+              , space = "bottom"
+              , padding.text = 5)
+        }
+#        browser()
+      overlay <- sapply(overlay, function(thisOverlay)getData(G,thisOverlay)[,c(y,x)])
+    }
       xyplot(formula1
           ,fs
           ,smooth=smooth
           ,xlab=xlab
           ,ylab=ylab
           ,scales=axisObject$scales
-          ,overlay = overlay
+          , overlay = overlay
+          , overlay.symbol = overlay.symbol
+          , key = key
           ,...
               )  
     }else{
