@@ -7,19 +7,19 @@
 #' @param y \code{character} node name or path
 #' @param z \code{logical} vector as local event indices relative to node \code{y} 
 setMethod("updateIndices",
-    signature=signature(x="GatingHierarchy",y="character",z="logical"), 
-    definition=function(x,y,z)
+    signature=signature(obj="GatingHierarchy",y="character",z="logical"), 
+    definition=function(obj,y,z)
     {
       
-      nodeID <- flowWorkspace:::.getNodeInd(x, y)
+      nodeID <- flowWorkspace:::.getNodeInd(obj, y)
       #get original indices
-      pInd <- getIndices(x, y)
+      pInd <- getIndices(obj, y)
       #update it with the new one
       #convert to global one by combining it with parent indice
       pInd[which(pInd)] <- z
       #added it to gating tree
-      sn <- sampleNames(x)
-      ptr <- x@pointer
+      sn <- sampleNames(obj)
+      ptr <- obj@pointer
       .Call("R_setIndices", ptr, sn, nodeID-1, pInd, PACKAGE = "flowWorkspace")
     })
 
