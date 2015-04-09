@@ -1,6 +1,7 @@
 #' Convenient function to print the parameters of logicle Transformation stored in transformList
 #' @param transList a transformList object (typically returned by estimateLogicle) that contains a list if logicle transformation functions
 #' @author Phu Van
+#' @export 
 print.logicle <- function(transList){
   for (trans in transList@transforms){
     chnl <- trans@input

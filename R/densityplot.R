@@ -5,6 +5,7 @@
 #'  
 #' @param x GatingHierarchy
 #' @param data node/population name
+#' @export 
 setMethod("densityplot", signature = c("GatingHierarchy", "character")
           , definition = function(x, data, ...){
   gh <- x

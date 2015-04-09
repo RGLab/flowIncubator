@@ -5,7 +5,8 @@
 #' 
 #' @param x \code{GatingHierarchy} object
 #' @param y \code{character} node name or path
-#' @param z \code{logical} vector as local event indices relative to node \code{y} 
+#' @param z \code{logical} vector as local event indices relative to node \code{y}
+#' @export  
 setMethod("updateIndices",
     signature=signature(obj="GatingHierarchy",y="character",z="logical"), 
     definition=function(obj,y,z)
@@ -24,15 +25,25 @@ setMethod("updateIndices",
     })
 
 
-
-
+#' Convenient wrapper to extract all the descedenat nodes of the given population
+#' @param gh GatingHierarchy object
+#' @param node character that gives the name or path of population node
+#' @export 
 getDescendants <- function(gh, node){
   nodelist <- new.env(parent=emptyenv())
   nodelist$v <-integer()
   flowWorkspace:::.getAllDescendants(gh, node, nodelist)
   nodelist$v
 }
-
+#' A wrapper that swaps the channel names with marker names 
+#' 
+#' It is useful to prepare multiple GatingSets for merging when the marker (instead of channel) names are consistent accross batches.
+#' It basically updates the dimension names of the underling flow data as well as the gate definitions stored in GatingSets. 
+#' It's important to be aware that the gates in the original GatingSet will be updated even a new GatingSet object will be returend as the result. 
+#' 
+#' @return a new GatingSet
+#' @param gs GatingSet objects
+#' @export 
 swapChannelMarker <- function(gs){
   fs <- getData(gs)
   
@@ -63,8 +74,10 @@ swapChannelMarker <- function(gs){
 #'
 #'
 #' @param fr the \code{flowFrame} object to preprocess
+#' @param use.exprs logical indicate that if the data matrix will be updated as well.
 #' @return the updated \code{flowFrame} object containing only the markers of
 #' interest
+#' @export 
 swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
   
   
@@ -113,6 +126,7 @@ swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
 #' @param gs \code{GatingSet} to work with
 #' @param map \code{data.frame} contains the mapping between old and new channel names
 #' @param nodes \code{character} vector to specify the nodes to be updated. Default is all the nodes
+#' @export 
 updateGateParameter <- function(gs, map, nodes = NULL){
   
   if(!identical(colnames(map), c("old", "new")))
@@ -155,13 +169,14 @@ updateGateParameter <- function(gs, map, nodes = NULL){
    message("done")
 }
 
-#' post process gs to fix channel name discrepancy caused by letter case:
+#' post process gs to fix channel name discrepancy caused by letter case#' 
 #' 1.between gates defined in xml and fcs
 #' 2.gates with xml
 #' 
 #' The assumption is the channel names is consistent across samples in FCS files.
 #' So basically it loop through all gates and match up the gate parameters to 
 #' the flow data and update it when needed.
+#' @export 
 fixChannelNames <- function(gs){
   
   coln <- colnames(getData(gs))

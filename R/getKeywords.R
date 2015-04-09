@@ -2,6 +2,7 @@
 #' Return them as a data.table with columns names for the keyword
 #' The FIL keyword is renamed to 'name' for sample name consistency
 #' No error checking at the moment.
+#' @export 
 setMethod("getKeywords",c("GatingSet","character"),function(obj,y){
       gs <- obj
       kv <- y
