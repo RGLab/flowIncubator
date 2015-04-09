@@ -16,6 +16,7 @@
 #'     gates <- tmix2DGate(fr = parent, channels = c("CD4", "CD8"), K = K, quantile = 0.9)  
 #'     print(xyplot(`CD8`~`CD4`, parent, smooth = FALSE, xbin = 32, filter = gates, stats = TRUE, main = paste0("K = ", K)))
 #' }
+#' }
 tmix2DGate <- function(fr, channels, K, quantile = 0.85, trans = 0, ...){
   if(length(channels)!=2)
     stop("2D gate must have two channels!")
