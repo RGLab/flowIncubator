@@ -9,7 +9,9 @@ updateGateParameter(gs, map, nodes = NULL)
 \arguments{
 \item{gs}{\code{GatingSet} to work with}
 
-\item{map}{\code{data.frame} contains the mapping between old and new channel names}
+\item{map}{\code{data.frame} contains the mapping between old and new channel names
+Note: Make sure to remove the '<' or '>' characters from 'old` name because the API tries
+      to only look at the raw channel name so that the gates with both prefixed and non-prefixed names could be updated.}
 
 \item{nodes}{\code{character} vector to specify the nodes to be updated. Default is all the nodes}
 }
@@ -17,5 +19,13 @@ updateGateParameter(gs, map, nodes = NULL)
 It actually reconstructs all the gates with their parameters changed
 based on given mapping between the old and new channel names.
 TODO: we want to have API to only update gate parameters instead of entire gate object.
+}
+\examples{
+\dontrun{
+ updateGateParameter(gs, map = data.frame(old = c("Qdot 655-A")  ##this will update both "Qdot 655-A" and "<Qdot 655-A>"
+                                         , new = c("<QDot 655-A>")
+                                         )
+                       , nodes = "14-")
+}
 }
 

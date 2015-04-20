@@ -125,7 +125,16 @@ swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
 #' 
 #' @param gs \code{GatingSet} to work with
 #' @param map \code{data.frame} contains the mapping between old and new channel names
+#'                              Note: Make sure to remove the '<' or '>' characters from 'old` name because the API tries 
+#'                                    to only look at the raw channel name so that the gates with both prefixed and non-prefixed names could be updated. 
 #' @param nodes \code{character} vector to specify the nodes to be updated. Default is all the nodes
+#' @examples 
+#' \dontrun{
+#'  updateGateParameter(gs, map = data.frame(old = c("Qdot 655-A")  ##this will update both "Qdot 655-A" and "<Qdot 655-A>"
+#'                                          , new = c("<QDot 655-A>")
+#'                                          )
+#'                        , nodes = "14-")  
+#' }
 #' @export 
 updateGateParameter <- function(gs, map, nodes = NULL){
   
