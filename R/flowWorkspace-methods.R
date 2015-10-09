@@ -61,9 +61,8 @@ swapChannelMarker <- function(gs){
   pd <- pd[!is.na(pd$desc), 2:1]
   colnames(pd) <- c("old", "new")
   
-  updateGateParameter(gs, pd)
-  flowData(gs) <- fs
-  gs
+  updateChannels(gs, pd)
+  
 }
 
 #' Preprocesses a Cytotrol flowFrame object
@@ -116,67 +115,7 @@ swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
 }
 
 
-#' update the gate parameters for a GatingSet
-#' 
-#' It actually reconstructs all the gates with their parameters changed 
-#' based on given mapping between the old and new channel names.
-#' TODO: we want to have API to only update gate parameters instead of entire gate object.  
-#' 
-#' 
-#' @param gs \code{GatingSet} to work with
-#' @param map \code{data.frame} contains the mapping between old and new channel names
-#'                              Note: Make sure to remove the '<' or '>' characters from 'old` name because the API tries 
-#'                                    to only look at the raw channel name so that the gates with both prefixed and non-prefixed names could be updated. 
-#' @param nodes \code{character} vector to specify the nodes to be updated. Default is all the nodes
-#' @examples 
-#' \dontrun{
-#'  updateGateParameter(gs, map = data.frame(old = c("Qdot 655-A")  ##this will update both "Qdot 655-A" and "<Qdot 655-A>"
-#'                                          , new = c("<QDot 655-A>")
-#'                                          )
-#'                        , nodes = "14-")  
-#' }
-#' @export 
-updateGateParameter <- function(gs, map, nodes = NULL){
-  
-  if(!identical(colnames(map), c("old", "new")))
-    stop("'map' must contain two columns: 'old' and 'new'!")
-  if(is.null(nodes))
-    nodes <- getNodes(gs)[-1]
-  message("updating gates")
-  for(node in nodes)
-  {
-      message(".", appendLF = FALSE)
-        for(sn in sampleNames(gs))
-        {
-              gh <- gs[[sn]]
-              gate <- getGate(gh, node)
-              
-              if(!flowWorkspace:::.isBoolGate(gh,node)){
-                params <- as.vector(parameters(gate))
-#                browser()
-                #update according to the map
-                new_params <- as.vector(sapply(params, function(param){
-                      param_to_match <- gsub("<|>", "", param) #remove prefix
-                      ind <- match(param_to_match, map[, "old"])
-                      ifelse(is.na(ind), param, as.character(map[ind, "new"]))
-                    }))
-                if(!identical(new_params, params)){
-                  
-                  names(new_params) <- new_params                          
-                  parameters(gate) <- new_params
-                  
-                  setGate(gh, node, gate)  
-                }
-                
-              }
-              
-              
-      
-        }  
-        
-   }
-   message("done")
-}
+
 
 #' post process gs to fix channel name discrepancy caused by letter case#' 
 #' 1.between gates defined in xml and fcs
@@ -187,7 +126,7 @@ updateGateParameter <- function(gs, map, nodes = NULL){
 #' the flow data and update it when needed.
 #' @export 
 fixChannelNames <- function(gs){
-  
+  .Defunct("flowWorkspace::updateChannel")  
   coln <- colnames(getData(gs))
   for(sn in sampleNames(gs))
   {
@@ -425,17 +364,21 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #' @param gs a \code{GatingSet}
 #' @param node a \code{character} or \code{numeric} specifing node index
 #' @param failed a \code{character} or \code{numeric} specifing samples that fails the gating QA
+#' @param passed a \code{character} or \code{numeric} specifing samples that passes QA to be served as references
+#'                                                        By default, all samples other than failed will be used.
+#'                                                        but sometime it is helpful to narrow it down to a few of really good samples. 
 #' @param ... other arguments passed to \code{.nearestSample}
 
-.nearestSamples <- function(gs, node, failed, ...){
+.nearestSamples <- function(gs, node, failed, passed = NULL, ...){
   #get samples that do not fail the QA check
 #  browser()
   samples <- sampleNames(gs)
   failedInd <- match(failed,samples)
-  samples <- samples[-c(failedInd)]
+  if(is.null(passed))
+    passed <- samples[-c(failedInd)]
   sapply(failed,function(thisTarget){
         message("Finding reference sample for: ",thisTarget)
-        .nearestSample(gs, node = node, target = thisTarget, source = samples, ...) 
+        .nearestSample(gs, node = node, target = thisTarget, source = passed, ...) 
       })
 
 }
