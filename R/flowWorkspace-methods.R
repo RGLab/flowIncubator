@@ -525,7 +525,6 @@ plotGate_labkey <- function(G,parentID,x,y,smooth=FALSE,cond=NULL,xlab=NULL,ylab
 #' @param gs a \code{GatingSet}
 #' @param samples a named \code{character} vector of sample names in the supplied GatingSet
 #' @param gate_name a \code{character} specifying the gate to operate on (eg. "CD3")
-#' @param ... other arguments passed to \code{.nearestSample}
 
 .regateNearestSamples <- function (gs, samples, gate_name){
   for (i in 1:length(samples)){
