@@ -2,10 +2,8 @@
 
 export(fixChannelNames)
 export(getDescendants)
-export(get_groups)
 export(grep.FCS)
 export(merge_gs)
-export(parse_xmls)
 export(plotGate_labkey)
 export(print.logicle)
 export(readFCSPar)
