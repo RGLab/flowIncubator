@@ -129,75 +129,80 @@ matchPath <- function(g, leaf, nodeSet){
 #' @importFrom graph graphNEL nodeDataDefaults nodeData<- addEdge edges removeNode
 #' @importFrom plyr compact
 constructTree <- function(flowEnv, gateInfo){
-  objs <- as.list(flowEnv) #convert to list for easy operation
+  
   #get boolean gates
-  gateSets <- lapply(objs, function(obj){
+  gateSets <- sapply(ls(flowEnv), function(i){
+    obj <- flowEnv[[i]]
     if(class(obj) == "intersectFilter"){
       refs <- obj@filters
       refs <- sapply(refs, slot, "name")
       refs
     }
   })
+  
   gateSets <- compact(gateSets)
   
-  #sort by nCombinations
+  #sort by the depths of path
   counts <- sapply(gateSets, length)
   counts <- sort(counts)
   
-  #init the graph with all refered gates
-  allNodes <- unique(unlist(gateSets))
-  g <- graphNEL(nodes = allNodes, edgemode = "directed")
+  #init the graph with all gates that have been referred
+  gateIds <- unique(unlist(gateSets))
+  g <- graphNEL(nodes = gateIds, edgemode = "directed")
   
   nodeDataDefaults(g, "popName") <- ""
   nodeDataDefaults(g, "gateInfo") <- list()
   
   # add edges
   for(popId in names(counts)){
-    thisRef <- gateSets[[popId]]
-    thisCount <- length(thisRef)
+    thisGateSet <- gateSets[[popId]]
+    nDepth <- length(thisGateSet)
     
     popName <- subset(gateInfo, id == popId)[["name"]]
 
-    if(thisCount == 2){
-      #assuming thisRef[1] has already been (or will be) taken care of
-      #which means we assume root node always was defined by single Gate
-      nodeId <- thisRef[2]
+    if(nDepth == 2){
+      #assuming thisGateSet[1] has already been (or will be) taken care of
+      #which means we assume population tree always starts with a single Gate (instead of the combination of two or three)
+      gateID <- thisGateSet[2]
+      
       #add gate info
-      sb <- subset(gateInfo, id == nodeId)
-      nodeData(g, nodeId, "gateInfo") <- list(list(gate = flowEnv[[nodeId]], gateName = sb[["name"]], fcs = sb[["fcs"]]))
+      sb <- subset(gateInfo, id == gateID)
+      nodeData(g, gateID, "gateInfo") <- list(list(gate = flowEnv[[gateID]]
+                                                   , gateName = sb[["name"]]
+                                                   , fcs = sb[["fcs"]]))
       
       #add pop Info
-      nodeData(g, nodeId, "popName") <- popName
+      nodeData(g, gateID, "popName") <- popName
       
-      if(thisRef[1] != nodeId)#root node defined by single gate
+      if(thisGateSet[1] != gateID)#root node defined by single gate
       {
-        g <- addEdge(thisRef[1], nodeId, g)
+        g <- addEdge(thisGateSet[1], gateID, g)
       }
       
       
     }else{
       #traverse all the potential parent GateSets(i.e. subset)
-      parents <- names(counts[counts == thisCount - 1])
-      for(parent in parents)
+      parents_candidates <- names(counts[counts == nDepth - 1])
+      for(parent in parents_candidates)
       {
-        pRef <- gateSets[[parent]]
-        if(length(unique(pRef))>1)
-          if(setequal(intersect(pRef, thisRef), pRef))
+        pGateSet <- gateSets[[parent]]
+        if(length(unique(pGateSet))>1)
+          if(setequal(intersect(pGateSet, thisGateSet), pGateSet))
           { #if it is indeed a subset of the current gateSet
-            nodeId <- setdiff(thisRef, pRef) #parse out the leave node first
+            gateID <- setdiff(thisGateSet, pGateSet) #parse out the leave node first
             #then look up the existing graph edges to find its direct parent node
-            for(leaf in edges(g))
+            for(leaves in edges(g))
             {
               
-              if(length(leaf)>0){
-                if(matchPath(g, leaf, pRef)){
+              for(leaf in leaves){
+                if(matchPath(g, leaf, pGateSet)){
                   #add gate info 
-                  sb <- subset(gateInfo, id == nodeId)
-                  nodeData(g, nodeId, "gateInfo") <- list(list(gate = flowEnv[[nodeId]], gateName = sb[["name"]], fcs = sb[["fcs"]]))
+                  sb <- subset(gateInfo, id == gateID)
+                  nodeData(g, gateID, "gateInfo") <- list(list(gate = flowEnv[[gateID]], gateName = sb[["name"]], fcs = sb[["fcs"]]))
                   #add pop Info
-                  nodeData(g, nodeId, "popName") <- popName
+                  nodeData(g, gateID, "popName") <- popName
                   #add edge
-                  g <- addEdge(leaf, nodeId, g)
+                  g <- addEdge(leaf, gateID, g)
                 }
                   
                 
