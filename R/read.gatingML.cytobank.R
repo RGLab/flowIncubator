@@ -10,13 +10,14 @@
 #' @return a graphNEL that represents the population tree. 
 #' The gate and population name are stored in nodeData of each node. 
 #' Compensation and transformations are stored in graphData.
-#' @example 
+#' @examples 
 #' 
 #' xml <- system.file("extdata/cytotrol_tcell_cytobank.xml", package = "flowIncubator")
 #' g <- read.gatingML.cytobank(xml) #parse the population tree
 #' plotTree(g) #visualize it
 #' nodeData(g)[[1]] # access individual gates
-#' 
+#' g@@graphData[["compensation"]] #access comps
+#' g@@graphData[["transformations"]] #access trans
 read.gatingML.cytobank <- function(file, ...){
   
   #parse all the elements:gate, GateSets, comp, trans
@@ -29,6 +30,27 @@ read.gatingML.cytobank <- function(file, ...){
   #construct tree from GateSets
   g <- constructTree(flowEnv, gateInfo)
   
+  #attach comp and trans
+  
+  objNames <- ls(flowEnv)
+  
+  trans <-  sapply(objNames, function(i){
+                        
+                              obj <- flowEnv[[i]]
+                              if(extends(class(obj), "transformation"))
+                                obj
+                            }, USE.NAMES = FALSE)
+  g@graphData[["transformations"]] <- compact(trans)
+  
+  comps <- sapply(objNames, function(i){
+    
+                                        obj <- flowEnv[[i]]
+                                        if(class(obj) == "compensation")
+                                          obj
+                                      }, USE.NAMES = FALSE)
+  g@graphData[["compensation"]] <- compact(comps)
+  
+  g
 }
 
 #' Parse the cytobank custom_info for each gate
@@ -105,6 +127,7 @@ matchPath <- function(g, leaf, nodeSet){
 #' @param gateInfo the data.frame contains the gate name, fcs filename parsed by parse.gateInfo function
 #' @return a graphNEL represent the population tree. The gate and population name are stored as nodeData in each node.
 #' @importFrom graph graphNEL nodeDataDefaults nodeData<- addEdge edges removeNode
+#' @importFrom plyr compact
 constructTree <- function(flowEnv, gateInfo){
   objs <- as.list(flowEnv) #convert to list for easy operation
   #get boolean gates
@@ -115,7 +138,7 @@ constructTree <- function(flowEnv, gateInfo){
       refs
     }
   })
-  gateSets <- gateSets[!sapply(gateSets,is.null)]
+  gateSets <- compact(gateSets)
   
   #sort by nCombinations
   counts <- sapply(gateSets, length)
