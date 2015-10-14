@@ -1,32 +1,17 @@
-
-# parse.sampleName <- function(file, ...)
-# {       
-#   require(XML)
-#   require(plyr)
-#   root <- xmlRoot(flowUtils:::smartTreeParse(file,...))
-#   
-#   ldply(xmlChildren(root), function(node){
-#     nodeName <- xmlName(node)
-#     
-#     if(grepl("*Gate", nodeName)){
-#       if(nodeName!="BooleanGate"){
-#         gateId <- xmlGetAttr(node, "id")
-#         
-#         fcs_name <- xmlValue(xmlElementsByTagName(node,"fcs_file_filename", recursive = TRUE)[[1]])
-#         
-#         if(length(fcs_name)>0)
-#           c(id = gateId, fcs = fcs_name)
-#           
-#       }
-#     }
-#     
-#   }, .id = NULL)
-# }
-#-------#default read.gatingML doesn't parse fcs and name info -----------------------
+#' Parse the cytobank custom_info for each gate
+#' 
+#' Fcs filename and gate name stored in 'custom_info' element are beyong the scope of
+#' the gatingML standard and thus not covered by the default 'read.gatingML'. 
+#' 
+#' @param file xml file path
+#' @param ... additional arguments passed to the handlers of 'xmlTreeParse'
+#' @return a data.frame that contains three columns: id (gateId), name (gate name), fcs (fcs_file_filename).
+#' @export
+#' @importFrom XML xmlRoot, xmlName, xmlGetAttr, xmlValue, xmlElementsByTagName
+#' @importFrom plyr ldply
 parse.gateInfo <- function(file, ...)
 {       
-  require(XML)
-  require(plyr)
+  
   root <- xmlRoot(flowUtils:::smartTreeParse(file,...))
   
   ldply(xmlChildren(root), function(node){
@@ -55,48 +40,58 @@ parse.gateInfo <- function(file, ...)
   }, .id = NULL)
 }
 
-
-matchPath <- function(g, leaf, queue){
+#' Given the leaf node, try to find out if a collection of nodes can be matched to a path in a graph(tree) by the bottom-up searching
+#' @param g graphNEL
+#' @param leaf the name of leaf(terminal) node 
+#' @param nodeSet a set of node names
+#' @return TRUE if path is found, FALSE if not path is matched.
+#' @importFrom graph inEdges
+matchPath <- function(g, leaf, nodeSet){
   
-    if(leaf %in% queue){
-      queue <- queue[-match(leaf, queue)] #pop it out 
+    if(leaf %in% nodeSet){
+      nodeSet <- nodeSet[-match(leaf, nodeSet)] #pop it out 
       leaf <- inEdges(leaf, g)[[1]]#update it with parent node
-      if(length(queue) == 0){ #queue emptied
+      if(length(nodeSet) == 0){ #nodeSet emptied
         if(length(leaf) == 0)  #and path reach to the top
           return (TRUE)
         else
           return(FALSE) #path has not reached to the top
       }else
       {
-        if(length(leaf) == 0) #reach the top before queue is emptied
+        if(length(leaf) == 0) #reach the top before nodeSet is emptied
           return(FALSE)
         else
-          matchPath(g, leaf, queue)  #continue match the path against queue  
+          matchPath(g, leaf, nodeSet)  #continue match the path against nodeSet  
       }
     }else
       return(FALSE)
 
 }
 
-#discover trees from parsed gatingML gates
+#' Reconstruct the population tree from the GateSets
+#' @param flowEnv the enivornment contains the elements parsed by read.gatingML function
+#' @param gateInfo the data.frame contains the gate name, fcs filename parsed by parse.gateInfo function
+#' @return a graphNEL represent the population tree. The gate and population name are stored as nodeData in each node.
+#' @export
+#' @importFrom graph graphNEL, nodeDataDefatuls, nodeData<-, addEdge, edges, removeNode
 constructTree <- function(flowEnv, gateInfo){
   objs <- as.list(flowEnv) #convert to list for easy operation
   #get boolean gates
-  pops <- lapply(objs, function(obj){
+  gateSets <- lapply(objs, function(obj){
     if(class(obj) == "intersectFilter"){
       refs <- obj@filters
       refs <- sapply(refs, slot, "name")
       refs
     }
   })
-  pops <- pops[!sapply(pops,is.null)]
+  gateSets <- gateSets[!sapply(gateSets,is.null)]
   
   #sort by nCombinations
-  counts <- sapply(pops, length)
+  counts <- sapply(gateSets, length)
   counts <- sort(counts)
   
   #init the graph with all refered gates
-  allNodes <- unique(unlist(pops))
+  allNodes <- unique(unlist(gateSets))
   g <- graphNEL(nodes = allNodes, edgemode = "directed")
   
   nodeDataDefaults(g, "popName") <- ""
@@ -104,7 +99,7 @@ constructTree <- function(flowEnv, gateInfo){
   
   # add edges
   for(popId in names(counts)){
-    thisRef <- pops[[popId]]
+    thisRef <- gateSets[[popId]]
     thisCount <- length(thisRef)
     
     popName <- subset(gateInfo, id == popId)[["name"]]
@@ -131,7 +126,7 @@ constructTree <- function(flowEnv, gateInfo){
       parents <- names(counts[counts == thisCount - 1])
       for(parent in parents)
       {
-        pRef <- refs[[parent]]
+        pRef <- gateSets[[parent]]
         if(length(unique(pRef))>1)
           if(setequal(intersect(pRef, thisRef), pRef))
           { #if it is indeed a subset of the current gateSet
@@ -172,6 +167,11 @@ constructTree <- function(flowEnv, gateInfo){
   g
 }
 
+#' plot the population tree
+#' @param g a graphNEL generated by constructTree function
+#' @param label specifies what to be dispaled as node label. Can be either 'popName' (population name parsed from GateSets) or 'gateName'(the name of the actual gate associated with each node)
+#' @export
+#' @importFrom graph nodeData
 plotTree <- function(g, label = c("popName", "gateName")){
   label <- match.arg(label, c("popName", "gateName"))
   if(label == "popName")
