@@ -1,3 +1,29 @@
+#' Parser for gatingML exported by Cytobank
+#' 
+#' The Default parser (flowUtils::read.gatingML) does not  parse the population tree as well as 
+#' the custom information from cytobank. (e.g. gate name, fcs filename).
+#' 
+#' @param file Gating-ML XML file
+#' @param ... additional arguments passed to the handlers of 'xmlTreeParse'
+#' @export
+#' @importFrom flowUtils read.gatingML
+#' @return a graphNEL that represents the population tree. 
+#' The gate and population name are stored in nodeData of each node. 
+#' Compensation and transformations are stored in graphData.
+read.gatingML.cytobank <- function(file, ...){
+  
+  #parse all the elements:gate, GateSets, comp, trans
+  flowEnv <- new.env()
+  read.gatingML(xml, flowEnv) 
+  
+  #parse gate info (id vs fcs and pop name)
+  gateInfo <- parse.gateInfo(xml)
+  
+  #construct tree from GateSets
+  g <- constructTree(flowEnv, gateInfo)
+  
+}
+
 #' Parse the cytobank custom_info for each gate
 #' 
 #' Fcs filename and gate name stored in 'custom_info' element are beyong the scope of
@@ -6,8 +32,7 @@
 #' @param file xml file path
 #' @param ... additional arguments passed to the handlers of 'xmlTreeParse'
 #' @return a data.frame that contains three columns: id (gateId), name (gate name), fcs (fcs_file_filename).
-#' @export
-#' @importFrom XML xmlRoot, xmlName, xmlGetAttr, xmlValue, xmlElementsByTagName
+#' @importFrom XML xmlRoot xmlName xmlGetAttr xmlValue xmlElementsByTagName
 #' @importFrom plyr ldply
 parse.gateInfo <- function(file, ...)
 {       
@@ -72,8 +97,7 @@ matchPath <- function(g, leaf, nodeSet){
 #' @param flowEnv the enivornment contains the elements parsed by read.gatingML function
 #' @param gateInfo the data.frame contains the gate name, fcs filename parsed by parse.gateInfo function
 #' @return a graphNEL represent the population tree. The gate and population name are stored as nodeData in each node.
-#' @export
-#' @importFrom graph graphNEL, nodeDataDefatuls, nodeData<-, addEdge, edges, removeNode
+#' @importFrom graph graphNEL nodeDataDefaults nodeData<- addEdge edges removeNode
 constructTree <- function(flowEnv, gateInfo){
   objs <- as.list(flowEnv) #convert to list for easy operation
   #get boolean gates
@@ -187,3 +211,4 @@ plotTree <- function(g, label = c("popName", "gateName")){
                      , graph=list(rankdir="LR")))
   
 }
+
