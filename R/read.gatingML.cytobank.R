@@ -10,6 +10,13 @@
 #' @return a graphNEL that represents the population tree. 
 #' The gate and population name are stored in nodeData of each node. 
 #' Compensation and transformations are stored in graphData.
+#' @example 
+#' 
+#' xml <- system.file("extdata/cytotrol_tcell_cytobank.xml", package = "flowIncubator")
+#' g <- read.gatingML.cytobank(xml) #parse the population tree
+#' plotTree(g) #visualize it
+#' nodeData(g)[[1]] # access individual gates
+#' 
 read.gatingML.cytobank <- function(file, ...){
   
   #parse all the elements:gate, GateSets, comp, trans
