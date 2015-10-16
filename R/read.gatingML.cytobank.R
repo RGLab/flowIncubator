@@ -22,10 +22,10 @@ read.gatingML.cytobank <- function(file, ...){
   
   #parse all the elements:gate, GateSets, comp, trans
   flowEnv <- new.env()
-  read.gatingML(xml, flowEnv) 
+  read.gatingML(file, flowEnv) 
   
   #parse gate info (id vs fcs and pop name)
-  gateInfo <- parse.gateInfo(xml)
+  gateInfo <- parse.gateInfo(file)
   
   #construct tree from GateSets
   g <- constructTree(flowEnv, gateInfo)
@@ -136,83 +136,61 @@ constructTree <- function(flowEnv, gateInfo){
     if(class(obj) == "intersectFilter"){
       refs <- obj@filters
       refs <- sapply(refs, slot, "name")
-      refs
+      unique(refs) #make root node depth of 1
     }
   })
   
   gateSets <- compact(gateSets)
-  
+  popIds <- names(gateSets)
   #sort by the depths of path
-  counts <- sapply(gateSets, length)
+  counts <- sapply(gateSets, function(i)length(i))
   counts <- sort(counts)
   
   #init the graph with all gates that have been referred
-  gateIds <- unique(unlist(gateSets))
-  g <- graphNEL(nodes = gateIds, edgemode = "directed")
+  # gateIds <- unique(unlist(gateSets))
+  g <- graphNEL(nodes = popIds, edgemode = "directed")
   
   nodeDataDefaults(g, "popName") <- ""
   nodeDataDefaults(g, "gateInfo") <- list()
   
-  # add edges
+  # add edges (from nDepths 2 to n)
   for(popId in names(counts)){
     thisGateSet <- gateSets[[popId]]
     nDepth <- length(thisGateSet)
     
     popName <- subset(gateInfo, id == popId)[["name"]]
+    #add pop name
+    nodeData(g, popId, "popName") <- popName
+    
+    if(nDepth == 1){#root node
+      gateID <- thisGateSet[1]
 
-    if(nDepth == 2){
-      #assuming thisGateSet[1] has already been (or will be) taken care of
-      #which means we assume population tree always starts with a single Gate (instead of the combination of two or three)
-      gateID <- thisGateSet[2]
-      
-      #add gate info
-      sb <- subset(gateInfo, id == gateID)
-      nodeData(g, gateID, "gateInfo") <- list(list(gate = flowEnv[[gateID]]
-                                                   , gateName = sb[["name"]]
-                                                   , fcs = sb[["fcs"]]))
-      
-      #add pop Info
-      nodeData(g, gateID, "popName") <- popName
-      
-      if(thisGateSet[1] != gateID)#root node defined by single gate
-      {
-        g <- addEdge(thisGateSet[1], gateID, g)
-      }
-      
-      
     }else{
       #traverse all the potential parent GateSets(i.e. subset)
-      parents_candidates <- names(counts[counts == nDepth - 1])
-      for(parent in parents_candidates)
+      parents_popIds <- names(counts[counts == nDepth - 1])
+      for(parentID in parents_popIds)
       {
-        pGateSet <- gateSets[[parent]]
-        if(length(unique(pGateSet))>1)
-          if(setequal(intersect(pGateSet, thisGateSet), pGateSet))
-          { #if it is indeed a subset of the current gateSet
-            gateID <- setdiff(thisGateSet, pGateSet) #parse out the leave node first
-            #then look up the existing graph edges to find its direct parent node
-            for(leaves in edges(g))
-            {
-              
-              for(leaf in leaves){
-                if(matchPath(g, leaf, pGateSet)){
-                  #add gate info 
-                  sb <- subset(gateInfo, id == gateID)
-                  nodeData(g, gateID, "gateInfo") <- list(list(gate = flowEnv[[gateID]], gateName = sb[["name"]], fcs = sb[["fcs"]]))
-                  #add pop Info
-                  nodeData(g, gateID, "popName") <- popName
-                  #add edge
-                  g <- addEdge(leaf, gateID, g)
-                }
-                  
-                
-              }
-            }
-            
-          }
+        pGateSet <- gateSets[[parentID]]
+        #check the overlaps between two sets
+        if(setequal(intersect(pGateSet, thisGateSet), pGateSet))
+        { #if it is indeed a subset of the current gateSet
+          gateID <- setdiff(thisGateSet, pGateSet) #parse out the gateID
+          #add edge
+          g <- addEdge(parentID, popId, g)
+          # There might be multiple parents due to the duplicated GateSets allowed in gatingML
+          # it is not clear which one should be picked and
+          # we pick the first one for now
+          break 
+        }
       }
-      
     }
+    
+    #add gate
+    sb <- subset(gateInfo, id == gateID)
+    nodeData(g, popId, "gateInfo") <- list(list(gate = flowEnv[[gateID]]
+                                                , gateName = sb[["name"]]
+                                                , fcs = sb[["fcs"]])
+                                          )
     
   }
   
