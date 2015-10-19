@@ -73,25 +73,32 @@ parse.gateInfo <- function(file, ...)
     
     if(grepl("*Gate", nodeName)){
       # if(nodeName=="BooleanGate"){
-        gateId <- xmlGetAttr(node, "id")
+        id <- xmlGetAttr(node, "id")
         
-        pop <- xmlValue(xmlElementsByTagName(node,"name", recursive = TRUE)[[1]])
+        name <- getCustomNodeInfo(node, "name")
+        fcs_file_filename <- getCustomNodeInfo(node, "fcs_file_filename")
+        gate_id <- getCustomNodeInfo(node, "gate_id")
         
-        fcsNodes <- xmlElementsByTagName(node,"fcs_file_filename", recursive = TRUE)
-        if(length(fcsNodes) >0 ){
-          fcs <- xmlValue(fcsNodes[[1]])
-          if(length(fcs)==0)
-            fcs <- ""
-        }
-        else 
-          fcs <- ""
-    
-      c(id = gateId, name = pop, fcs = fcs)
+        
+        c(id = id, name = name, gate_id = gate_id, fcs = fcs_file_filename)
         
       # }
     }
     
   }, .id = NULL)
+}
+
+getCustomNodeInfo <- function(node, nodeName){
+  custom_node <- xmlElementsByTagName(node, nodeName, recursive = TRUE)
+  if(length(custom_node) >0 ){
+    value <- xmlValue(custom_node[[1]])
+    if(length(value)==0)
+      value <- ""
+  }
+  else 
+    value <- ""
+  
+  value
 }
 
 #' Given the leaf node, try to find out if a collection of nodes can be matched to a path in a graph(tree) by the bottom-up searching
