@@ -1,3 +1,7 @@
+#' It is essentially a graphNEL class and exists for the purpose of method dispatching.
+#' @exportClass graphGatingML
+setClass("graphGatingML", contains = "graphNEL")
+
 #' Parser for gatingML exported by Cytobank
 #' 
 #' The Default parser (flowUtils::read.gatingML) does not  parse the population tree as well as 
@@ -50,7 +54,8 @@ read.gatingML.cytobank <- function(file, ...){
                                       }, USE.NAMES = FALSE)
   g@graphData[["compensation"]] <- compact(comps)
   
-  g
+  as(g, "graphGatingML")
+  
 }
 
 #' Parse the cytobank custom_info for each gate
@@ -229,16 +234,16 @@ constructTree <- function(flowEnv, gateInfo){
 #' @export
 #' @importFrom graph nodeData nodes<- nodeRenderInfo<-
 #' @importFrom Rgraphviz renderGraph layoutGraph
-plotTree <- function(g, label = c("popName", "gateName")){
+setMethod("plot", signature = c(x = "graphGatingML", y = "missing"), definition = function(x, label = c("popName", "gateName")){
   label <- match.arg(label, c("popName", "gateName"))
   if(label == "popName")
-    nodeLabel  <- sapply(nodeData(g), `[[`, "popName")
+    nodeLabel  <- sapply(nodeData(x), `[[`, "popName")
   else
-    nodeLabel  <- sapply(nodeData(g), function(x)x[["gateInfo"]][["gateName"]])
+    nodeLabel  <- sapply(nodeData(x), function(i)i[["gateInfo"]][["gateName"]])
   
   
   #annotate the node with tailor gate info
-  nTailoredGate <- sapply(nodeData(g), function(x)length(x[["gateInfo"]][["tailored_gate"]]))
+  nTailoredGate <- sapply(nodeData(x), function(i)length(i[["gateInfo"]][["tailored_gate"]]))
                     
   nAttrs <- list()
   
@@ -250,16 +255,16 @@ plotTree <- function(g, label = c("popName", "gateName")){
                          ifelse(i>0,"dotted","solid")
                        })
   
-  nodeRenderInfo(g) <- nAttrs
-  lay <- layoutGraph(g
-                               ,attrs=list(graph=list(rankdir="LR",page=c(8.5,11))
-                                       ,node=list(fixedsize=FALSE
-                                                ,fontsize = 12
-                                                ,shape="ellipse"
-                                     )
-                         )
-  )
+  nodeRenderInfo(x) <- nAttrs
+  lay <- layoutGraph(x
+                     ,attrs=list(graph=list(rankdir="LR",page=c(8.5,11))
+                             ,node=list(fixedsize=FALSE
+                                      ,fontsize = 12
+                                      ,shape="ellipse"
+                           )
+               )
+              )
   renderGraph(lay)
   
-}
+})
 
