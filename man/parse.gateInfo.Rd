@@ -4,7 +4,7 @@
 \alias{parse.gateInfo}
 \title{Parse the cytobank custom_info for each gate}
 \usage{
-\method{parse}{gateInfo}(file, ...)
+parse.gateInfo(file, ...)
 }
 \arguments{
 \item{file}{xml file path}

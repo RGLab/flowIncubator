@@ -134,10 +134,12 @@ matchPath <- function(g, leaf, nodeSet){
 #' @param gateInfo the data.frame contains the gate name, fcs filename parsed by parse.gateInfo function
 #' @return a graphNEL represent the population tree. The gate and population name are stored as nodeData in each node.
 #' @importFrom graph graphNEL nodeDataDefaults<- nodeData<- addEdge edges removeNode
-#' @importFrom plyr compact
+#' @importFrom plyr compact dlply
 constructTree <- function(flowEnv, gateInfo){
   
-  #get boolean gates
+  #parse the references from boolean gates
+  #currently we use refs (which point to the gate id defined by the standard)
+  #we may want to switch to the gate_id in custom_info used by cytobank internally
   gateSets <- sapply(ls(flowEnv), function(i){
     obj <- flowEnv[[i]]
     if(class(obj) == "intersectFilter"){
@@ -194,9 +196,19 @@ constructTree <- function(flowEnv, gateInfo){
     
     #add gate
     sb <- subset(gateInfo, id == gateID)
+    #try to find the tailored gate
+    tg_sb <- subset(gateInfo, gate_id == sb[["gate_id"]] & fcs != "")
+    
+    tg <- dlply(tg_sb, "id", function(row){
+                gateID <- row[["id"]]
+                flowEnv[[gateID]]
+              })
+    names(tg) <- tg_sb[["fcs"]]
     nodeData(g, popId, "gateInfo") <- list(list(gate = flowEnv[[gateID]]
                                                 , gateName = sb[["name"]]
-                                                , fcs = sb[["fcs"]])
+                                                , fcs = sb[["fcs"]]
+                                                , tailored_gate = tg
+                                              )
                                           )
     
   }
