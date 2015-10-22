@@ -1,4 +1,10 @@
-#' It is essentially a graphNEL class and exists for the purpose of method dispatching.
+#' A graph object returned by 'read.gatingML.cytobank' function.
+#' 
+#' Each node corresponds to a population(or GateSet) defined in gatingML file. The actual gate object (both global and tailored gates) is 
+#' associated with each node as nodeData. Compensation and transformations are stored in graphData slot.
+#'
+#' The class simply extends the graphNEL class and exists for the purpose of method dispatching.
+#' 
 #' @exportClass graphGatingML
 setClass("graphGatingML", contains = "graphNEL")
 
@@ -11,7 +17,7 @@ setClass("graphGatingML", contains = "graphNEL")
 #' @param ... additional arguments passed to the handlers of 'xmlTreeParse'
 #' @export
 #' @importFrom flowUtils read.gatingML
-#' @return a graphNEL that represents the population tree. 
+#' @return a graphGatingML that represents the population tree. 
 #' The gate and population name are stored in nodeData of each node. 
 #' Compensation and transformations are stored in graphData.
 #' @examples 
@@ -270,49 +276,71 @@ setMethod("plot", signature = c(x = "graphGatingML", y = "missing"), definition 
 })
 
 #' Apply the gatingML graph to a GatingSet
-#' It performs compensation, transformation and gating.
+#' It applies the gates to the GatingSet based on the population tree described in graphGatingML.
 #' @param x graphGatingML
 #' @param y GatingSet
 #' @param ... other arguments
-setMethod("gating", c("graphGatingML", "GatingSet"), function(x, y, ...){
+#' @importFrom openCyto gating
+#' @export
+setMethod("gating", signature = c("graphGatingML", "GatingSet"), function(x, y, ...){
   gating.graphGatingML(x, y, ...)
 })
 
 gating.graphGatingML <- function(x, y, ...) {
   
-  fs <- flowData(gs)
-  message("compensation...")
+browser()  
+
+}
+
+#' Extract compensation from graphGatingML object.
+#' @param x graphGatingML
+#' @return compensation object
+#' @importFrom flowWorkspace getCompensationMatrices
+#' @export
+setMethod("getCompensationMatrices", signature = "graphGatingML", definition = function(x){
   comp <- x@graphData[["compensation"]][[1]]
   ##TODO: determine the comp based on compensation-ref
   param <- parameters(comp)
   param <- gsub("Comp_", "", param)
   colnames(comp@spillover) <- param
-  fs <- compensate(fs, comp)
+  comp
+})
+
+#' Extract transformations from graphGatingML object.
+#' @param x graphGatingML
+#' @return transformList object
+#' @importFrom flowWorkspace getTransformations
+#' @importFrom flowCore transformList eval parameters colnames
+#' @export
+setMethod("getTransformations", signature = c(x = "graphGatingML"), function(x){
   
-  message("transformation...")
   trans <- x@graphData[["transformations"]]
   #remove the generic one
-  samples <- sampleNames(fs)
-  for(tran in trans){
-    
-    chnl <- as.vector(parameters(tran@parameters))
-    if(chnl!="any"){
-      for(sn in samples){
-        fr <- fs[[sn]]
-        exprs(fs[[sn]])[,chnl] <- eval(tran)(fr)
-      }
-    }
-    
-  }
-  flowData(gs) <- fs
+#   samples <- sampleNames(`_data`)
+#   for(tran in trans){
+#     
+#     chnl <- as.vector(parameters(tran@parameters))
+#     if(chnl!="any"){
+#       for(sn in samples){
+#         fr <- `_data`[[sn]]
+#         exprs(`_data`[[sn]])[,chnl] <- eval(tran)(fr)
+#       }
+#     }
+#     
+#   }
+#   `_data`
   #can't use transform method 
   #since Gml version of trans object does not follow the convention of the transformation function (input)
   #thus can't construct the valid transformList to be operated on
-  # chnl <- sapply(trans, function(tran)unname(parameters(tran@parameters)), USE.NAMES = F)
-  # trans <- transformList(chnl,trans)
-  # fs <- transform(fs, trans)
+  chnl <- sapply(trans, function(tran)unname(parameters(tran@parameters)), USE.NAMES = F)
+  #convert from transform object to function since transform has empty function in .Data slot
+  #which is not suitable for transformList constructor
+  trans <- sapply(trans, eval, USE.NAMES = F)
+  ind <- chnl != "any"
   
   
-  message("gating...")
-  gs
-}
+  transformList(chnl[ind], trans[ind])  
+  
+})
+
+

@@ -3,8 +3,12 @@
 \docType{class}
 \name{graphGatingML-class}
 \alias{graphGatingML-class}
-\title{It is essentially a graphNEL class and exists for the purpose of method dispatching.}
+\title{A graph object returned by 'read.gatingML.cytobank' function.}
 \description{
-It is essentially a graphNEL class and exists for the purpose of method dispatching.
+Each node corresponds to a population(or GateSet) defined in gatingML file. The actual gate object (both global and tailored gates) is
+associated with each node as nodeData. Compensation and transformations are stored in graphData slot.
+}
+\details{
+The class simply extends the graphNEL class and exists for the purpose of method dispatching.
 }
 

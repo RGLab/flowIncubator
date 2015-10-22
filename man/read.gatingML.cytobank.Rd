@@ -12,7 +12,7 @@ read.gatingML.cytobank(file, ...)
 \item{...}{additional arguments passed to the handlers of 'xmlTreeParse'}
 }
 \value{
-a graphNEL that represents the population tree.
+a graphGatingML that represents the population tree.
 The gate and population name are stored in nodeData of each node.
 Compensation and transformations are stored in graphData.
 }
