@@ -148,38 +148,58 @@ setMethod("gating", signature = c("graphGML", "GatingSet"), function(x, y, ...){
 
 #' @importFrom RBGL tsort
 gating.graphGML <- function(gt, gs, ...) {
-  gt_nodes <- tsort(gt)[-1]#by the topological order
-  for (node in gt_nodes) {
-    browser()
+  
+  
+  
+  gt_nodes <- tsort(gt)
+  for (nodeID in gt_nodes) {
+    
     # get parent node to gate
-#     gt_node_pop <- nodeData(gt, node)
-#     parentNode <- inEdges(node, gt)[[1]]
-#     parent <- nodeData(gt, parentNode)[["popName"]]
-#     if(is.null(parent))parent <- "root"
-#     
-#     this_gate <- (gt, node)
-#     
-#     
-#     parentInd <- match(parent, getNodes(y[[1]], showHidden = TRUE))
+    gt_node <- getNodes(gt, nodeID, only.names = F)
+    popName <- gt_node[["popName"]]
+    parentID <- getParent(gt, nodeID)
+    
+    if(length(parentID) == 0)
+      parent <- "root"
+    else
+      parent <- getNodes(gt, parentID, only.names = F)[["popName"]]
+    
+    #TODO: rename the node name with path in order to match against gs    
+#     parentInd <- match(parent, getNodes(gs[[1]], showHidden = TRUE))
 #     if (is.na(parentInd)) 
 #       stop("parent node '", parent, "' not gated yet!")
-#     
-#     #preprocessing
-#     pp_res <- NULL
-#     #    browser()
-#     if(class(this_ppm) == "ppMethod")
-#       pp_res <- preprocessing(x = this_ppm, y, parent = parent, gtPop = gt_node_pop, gm = this_gate, ...)
-#     #    browser()
-#     # pass the pops and gate to gating routine
-#     filterObj <- gating(x = this_gate, y, parent = parent, gtPop = gt_node_pop, pp_res = pp_res, ...)
-#     # update fct
-#     if (!is.null(env_fct) && !is.null(filterObj)) {
-#       nodeData(env_fct$fct, node, "fList")[[1]] <- filterObj
-#     }  
+
+    this_gate <- gt_node[["gateInfo"]][["gate"]]
+    this_gate <- sapply(sampleNames(gs), function(i)this_gate)
+    #update gates that are tailored for specific samples
+    tailor_gate <- gt_node[["gateInfo"]][["tailored_gate"]]
+    if(length(tailor_gate) >0){
+          this_gate[names(tailor_gate)] <- tailor_gate
+    }
     
+    
+    #hack: strip the prefix of trans and comps names from dimensions
+    # we'd like flowUtils to have an option to not prepend these when parsing gates
+    this_gate <- sapply(this_gate, function(i){
+      params <- parameters(i)
+      
+      params <- sapply(params, function(param){
+        array <- strsplit(split = "\\.", param)[[1]]
+        if(length(array) == 3)
+          array[3]
+        else
+          array
+        })
+      
+      parameters(i) <- params
+      i
+    })
+    message(popName)
+    
+    add(gs, this_gate, parent = parent, name = popName)
     
   } 
-  
+  recompute(gs)
 }
 
 #' Extract compensation from graphGML object.
