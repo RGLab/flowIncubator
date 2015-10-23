@@ -40,28 +40,72 @@ read.gatingML.cytobank <- function(file, ...){
   #parse gate info (id vs fcs and pop name)
   gateInfo <- parse.gateInfo(file)
   
+  #restore the original gate parameter names 
+  #because flowUtils add comp and tran names as prefix which is really not neccessary (even problematic) here.
+  for(objID in ls(flowEnv)){
+    obj <- flowEnv[[objID]]
+    if(is(obj, "parameterFilter")){
+      
+      # message(class(obj))
+      
+      sb <- subset(gateInfo, id == objID)
+      if(nrow(sb)>0){
+        orig_params <- sb[["params"]]
+        orig_params <- strsplit(split = ":", orig_params)[[1]]
+        params <- parameters(obj)
+        ind <- sapply(orig_params, function(orig_param)grep(paste0(orig_param, "$"), params))
+        parameters(obj) <- orig_params[ind]   
+        flowEnv[[objID]] <-  obj  
+      }
+      
+    }
+    
+  }
+  
+  
   #construct tree from GateSets
   g <- constructTree(flowEnv, gateInfo)
   
-  #attach comp and trans
+  #determine comps and trans to be used
   
-  objNames <- ls(flowEnv)
   
-  trans <-  sapply(objNames, function(i){
+  comp_refs <- gateInfo[["comp_ref"]]
+  comp_refs <- unique(comp_refs[comp_refs!=""])
+  if(length(comp_refs) > 1)
+    stop("More than one compensation referred in gates!")
+  else{
+    if(comp_refs == "FCS")
+      comps <- "FCS"
+    else
+      comps <- flowEnv[[comp_refs]]
+  }
+  g@graphData[["compensation"]] <- comps
+
+  #don't need to do this since flowUtils already exported multiple trans for each referring channel  
+#   trans_ref <- gateInfo[["trans_ref"]]
+#   trans_ref <- unique(trans_ref[trans_ref!=""])
+#   if(length(trans_ref) > 1)
+#     stop("More than one transformations referred in gates!")
+#   else{
+#     
+#       trans <- flowEnv[[trans_ref]]
+#   }
+  
+  
+  trans <-  sapply(ls(flowEnv), function(i){
                         
-                              obj <- flowEnv[[i]]
-                              if(extends(class(obj), "transformation"))
-                                obj
-                            }, USE.NAMES = FALSE)
-  g@graphData[["transformations"]] <- compact(trans)
+                                obj <- flowEnv[[i]]
+                                if(is(obj, "transformation"))
+                                  obj
+                              }, USE.NAMES = FALSE)
+  trans <- compact(trans)
+  chnl <- sapply(trans, function(tran)unname(parameters(tran@parameters)), USE.NAMES = F)
+  #convert from transform object to function since transform has empty function in .Data slot
+  #which is not suitable for transformList constructor
+  trans <- sapply(trans, eval, USE.NAMES = F)
+  ind <- chnl != "any"
   
-  comps <- sapply(objNames, function(i){
-    
-                                        obj <- flowEnv[[i]]
-                                        if(class(obj) == "compensation")
-                                          obj
-                                      }, USE.NAMES = FALSE)
-  g@graphData[["compensation"]] <- compact(comps)
+  g@graphData[["transformations"]] <- transformList(chnl[ind], trans[ind]) 
   
   as(g, "graphGML")
   
@@ -86,17 +130,31 @@ parse.gateInfo <- function(file, ...)
     nodeName <- xmlName(node)
     
     if(grepl("*Gate", nodeName)){
-      # if(nodeName=="BooleanGate"){
+      
+      
         id <- xmlGetAttr(node, "id")
         
         name <- getCustomNodeInfo(node, "name")
         fcs_file_filename <- getCustomNodeInfo(node, "fcs_file_filename")
-        gate_id <- getCustomNodeInfo(node, "gate_id")
+        gate_id <- getCustomNodeInfo(node, "gate_id")#used to find tailored gate
+        if(nodeName %in% c("BooleanGate", "QuadrantGate")) #TODO: deal with quadGate
+        {          
+          comp_ref <- trans_ref <- params <- ""
+        }else{
+          
+          dimNode <- xmlElementsByTagName(node, "dimension")
+          comp_ref <- unique(sapply(dimNode, function(i)xmlGetAttr(i, "compensation-ref")))
+          trans_ref <- unname(unlist(compact(sapply(dimNode, function(i)xmlGetAttr(i, "transformation-ref")))))
+          trans_ref <- ifelse(is.null(trans_ref), "", trans_ref)
+          params <- paste(sapply(dimNode, function(i)xmlGetAttr(i[["fcs-dimension"]], "name")), collapse = ":")
+        }
+        # message(name)
+        # browser()
+        data.frame(id = id, name = name, gate_id = gate_id, fcs = fcs_file_filename
+          , comp_ref = comp_ref, trans_ref = trans_ref, params = params
+          , stringsAsFactors = FALSE)
         
-        
-        c(id = id, name = name, gate_id = gate_id, fcs = fcs_file_filename)
-        
-      # }
+      
     }
     
   }, .id = NULL)
@@ -218,7 +276,11 @@ constructTree <- function(flowEnv, gateInfo){
                 flowEnv[[gateID]]
               })
     names(tg) <- tg_sb[["fcs"]]
-    nodeData(g, popId, "gateInfo") <- list(list(gate = flowEnv[[gateID]]
+#     browser()
+#     message(popName)
+    gate <- flowEnv[[gateID]]
+    
+    nodeData(g, popId, "gateInfo") <- list(list(gate = gate
                                                 , gateName = sb[["name"]]
                                                 , fcs = sb[["fcs"]]
                                                 , tailored_gate = tg

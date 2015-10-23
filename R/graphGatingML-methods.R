@@ -178,22 +178,6 @@ gating.graphGML <- function(gt, gs, ...) {
     }
     
     
-    #hack: strip the prefix of trans and comps names from dimensions
-    # we'd like flowUtils to have an option to not prepend these when parsing gates
-    this_gate <- sapply(this_gate, function(i){
-      params <- parameters(i)
-      
-      params <- sapply(params, function(param){
-        array <- strsplit(split = "\\.", param)[[1]]
-        if(length(array) == 3)
-          array[3]
-        else
-          array
-        })
-      
-      parameters(i) <- params
-      i
-    })
     message(popName)
     
     add(gs, this_gate, parent = parent, name = popName)
@@ -204,16 +188,12 @@ gating.graphGML <- function(gt, gs, ...) {
 
 #' Extract compensation from graphGML object.
 #' @param x graphGML
-#' @return compensation object
+#' @return compensation object or "FCS" when compensation comes from FCS keywords
 #' @importFrom flowWorkspace getCompensationMatrices
 #' @export
 setMethod("getCompensationMatrices", signature = "graphGML", definition = function(x){
-  comp <- x@graphData[["compensation"]][[1]]
-  ##TODO: determine the comp based on compensation-ref
-  param <- parameters(comp)
-  param <- gsub("Comp_", "", param)
-  colnames(comp@spillover) <- param
-  comp
+  x@graphData[["compensation"]]
+  
 })
 
 #' Extract transformations from graphGML object.
@@ -224,33 +204,25 @@ setMethod("getCompensationMatrices", signature = "graphGML", definition = functi
 #' @export
 setMethod("getTransformations", signature = c(x = "graphGML"), function(x){
   
-  trans <- x@graphData[["transformations"]]
-  #remove the generic one
-  #   samples <- sampleNames(`_data`)
-  #   for(tran in trans){
-  #     
-  #     chnl <- as.vector(parameters(tran@parameters))
-  #     if(chnl!="any"){
-  #       for(sn in samples){
-  #         fr <- `_data`[[sn]]
-  #         exprs(`_data`[[sn]])[,chnl] <- eval(tran)(fr)
-  #       }
-  #     }
-  #     
-  #   }
-  #   `_data`
-  #can't use transform method 
-  #since Gml version of trans object does not follow the convention of the transformation function (input)
-  #thus can't construct the valid transformList to be operated on
-  chnl <- sapply(trans, function(tran)unname(parameters(tran@parameters)), USE.NAMES = F)
-  #convert from transform object to function since transform has empty function in .Data slot
-  #which is not suitable for transformList constructor
-  trans <- sapply(trans, eval, USE.NAMES = F)
-  ind <- chnl != "any"
+  x@graphData[["transformations"]]
   
-  
-  transformList(chnl[ind], trans[ind])  
   
 })
 
-
+#' compensate a flowSet based on the compensation information stored in graphGML object
+#' 
+#' @param x flowSet
+#' @param spillover graphGML
+#' @return compensated flowSet
+#' @importFrom flowCore compensate
+#' @export
+setMethod("compensate", signature = c("flowSet", "graphGML"), function(x, spillover, ...){
+  
+  comp <- getCompensationMatrices(spillover)
+  
+  if(comp == "FCS"){
+    mat <- compact(spillover(x[[1, use.exprs = FALSE]]))[[1]]
+    comp <- compensation(mat)
+  }
+  compensate(x, comp)
+})
