@@ -11,5 +11,5 @@ LazyLoad: yes
 Depends:
     flowWorkspace (>= 3.7.29),QUALIFIER (>= 1.3.6),flowCore (>= 1.37.2)
 Imports:
-    BiocGenerics, graph, plyr, XML, flowUtils, flowWorkspace, openCyto
+    BiocGenerics, plyr, flowWorkspace, openCyto
 biocViews: FlowCytometry, DataImport, Preprocessing, DataRepresentation
