@@ -137,14 +137,23 @@ parse.gateInfo <- function(file, ...)
         name <- getCustomNodeInfo(node, "name")
         fcs_file_filename <- getCustomNodeInfo(node, "fcs_file_filename")
         gate_id <- getCustomNodeInfo(node, "gate_id")#used to find tailored gate
-        if(nodeName %in% c("BooleanGate", "QuadrantGate")) #TODO: deal with quadGate
+        if(nodeName %in% c("BooleanGate"))
         {          
           comp_ref <- trans_ref <- params <- ""
-        }else{
-          
-          dimNode <- xmlElementsByTagName(node, "dimension")
+        }else
+        {
+          if(nodeName == "QuadrantGate"){
+            dimTag <- "divider"
+            #update id with quardant definition
+            quadrantList <- xmlElementsByTagName(node, "Quadrant")
+            id <- unname(sapply(quadrantList, function(i)xmlGetAttr(i, "id")))
+            
+          }else
+            dimTag <- "dimension"
+        
+          dimNode <- xmlElementsByTagName(node, dimTag)
           comp_ref <- unique(sapply(dimNode, function(i)xmlGetAttr(i, "compensation-ref")))
-          trans_ref <- unname(unlist(compact(sapply(dimNode, function(i)xmlGetAttr(i, "transformation-ref")))))
+          trans_ref <- unique(unname(unlist(compact(sapply(dimNode, function(i)xmlGetAttr(i, "transformation-ref"))))))
           trans_ref <- ifelse(is.null(trans_ref), "", trans_ref)
           params <- paste(sapply(dimNode, function(i)xmlGetAttr(i[["fcs-dimension"]], "name")), collapse = ":")
         }
@@ -211,7 +220,8 @@ constructTree <- function(flowEnv, gateInfo){
   
   #parse the references from boolean gates
   #currently we use refs (which point to the gate id defined by the standard)
-  #we may want to switch to the gate_id in custom_info used by cytobank internally
+  #we don't want to use gate_id from custom_info used by cytobank internally
+  #because quadrantGate seems do not have this id for each of its quadrant elements
   gateSets <- sapply(ls(flowEnv), function(i){
     obj <- flowEnv[[i]]
     if(class(obj) == "intersectFilter"){
