@@ -108,11 +108,11 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
       NULL
   })
   
-  cat("cytokines:", cytokines)
-  cat("other markers:", otherMarkers)
+  cat("\n cytokines:", cytokines)
+  cat("\n other markers:", otherMarkers)
   
   included_markers <- c(cytokines, otherMarkers)
-  input_mat <- as.matrix(input[,included_markers])
+  input_mat <- as.matrix(res_collapse[,included_markers])
   
   cat("input is ready, starting tSNE run... \n")
   system.time(tsne_out <- Rtsne(input_mat, check_duplicates = FALSE, ...))
