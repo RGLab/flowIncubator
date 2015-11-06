@@ -68,7 +68,7 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
     
   }
   , by = groupBy]
-  cat("resampling complete ! recomputing... ")
+  cat("subsampling complete ! recomputing... ")
   
   nodes <- getChildren(gs[[1]], parentGate, path = 2)
   
@@ -114,7 +114,7 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
   included_markers <- c(cytokines, otherMarkers)
   input_mat <- as.matrix(res_collapse[,included_markers])
   
-  cat("input is ready, starting tSNE run... \n")
+  cat("\n starting tSNE run... \n")
   system.time(tsne_out <- Rtsne(input_mat, check_duplicates = FALSE, ...))
   
   dat <- tsne_out$Y
