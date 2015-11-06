@@ -16,30 +16,38 @@
 #' @return a \code{matrix} of X and Y coordinates
 #' 
 require(flowWorkspace)
+require(flowIncubator)
 require(data.table)
+require(plyr)
 require(Rtsne)
 
-runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy, seed=999, theta=0.9 ...){
+runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy, seed=999, theta=0.9, ...){
   set.seed(seed) 
   
   #get pData
   pd <- as.data.table(pData(gs))
   
   #get cell counts of the parent gate
-  print("getting total cell counts from parent gate '", parentGate, "'...")
+  cat("getting total cell counts from parent gate", parentGate, "\n")
   parent_count <- unlist(lapply(gs, function(gh)getTotal(gh, parentGate)))
+  parent_count = ldply(parent_count)
+  
+  # col <- eval(paste(parentGate,"count", sep="_"))
+  
   setnames(parent_count,c("name",parentGate))
+  
   
   pd <- merge(pd, parent_count,by="name")
   
-  nTcells <- min(pd[, sum(parentGate), by = groupBy][, V1])
-  print("all samples have at least", nTcells, "cells. This will be the sample size...")
-  #' NOTE: this will fail if one or more sample has no cells !!!
+  
+  nTcells <- min(pd[, sum(get(parentGate)), by = groupBy][, V1])
+  cat("all samples have at least", nTcells, "cells. This will be the sample size...  ")
+  # NOTE: this will fail if one or more sample has no cells !!!
   
   pd[, {
     
     #subsample entire group together
-    totalEvents <- sum(parent_count)
+    totalEvents <- sum(get(parentGate))
     gInd <- 1:totalEvents
     gInd <- sample.int(totalEvents, size = nTcells)
     #convert it to logical vector
@@ -47,10 +55,10 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
     gInd.logical[gInd] <- T
     
     #split it into sample level
-    sn.factor <- unlist(sapply(name, function(sn)rep(sn, .SD[name == sn, parentGate])))
+    sn.factor <- unlist(sapply(name, function(sn)rep(sn, .SD[name == sn, get(parentGate)])))
     ind.vec <- split(gInd.logical, sn.factor)
     #       
-    #reset indices for each sample
+#     #reset indices for each sample
     for(sn in name)
     {
       thisInd <- ind.vec[[sn]]
@@ -60,7 +68,7 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
     
   }
   , by = groupBy]
-  print("resampling complete !!!")
+  cat("resampling complete ! recomputing... ")
   
   nodes <- getChildren(gs[[1]], parentGate, path = 2)
   
@@ -72,7 +80,6 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
                                  , nodes
                                  , other.markers = otherMarkers
                                  , map = markerMap
-                                 )
                                  , threshold = FALSE
   )
   
@@ -101,20 +108,21 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
       NULL
   })
   
-  print("cytokines:", cytokines)
-  print("other markers:", otherMarkers)
+  cat("cytokines:", cytokines)
+  cat("other markers:", otherMarkers)
   
   included_markers <- c(cytokines, otherMarkers)
   input_mat <- as.matrix(input[,included_markers])
   
-  print("input is ready, starting tSNE run... \n")
+  cat("input is ready, starting tSNE run... \n")
   system.time(tsne_out <- Rtsne(input_mat, check_duplicates = FALSE, ...))
   
   dat <- tsne_out$Y
   colnames(dat) <- c("x", "y")
   dat <- cbind(dat, res_collapse)
   dat <- data.table(dat)
-  print("DONE !")
+  
+  cat("DONE !")
   return(dat)
   
 }
