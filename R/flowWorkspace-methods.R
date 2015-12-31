@@ -21,7 +21,7 @@ setMethod("updateIndices",
       #added it to gating tree
       sn <- sampleNames(obj)
       ptr <- obj@pointer
-      .Call("R_setIndices", ptr, sn, nodeID-1, pInd, PACKAGE = "flowWorkspace")
+      flowWorkspace:::.cpp_setIndices(ptr, sn, nodeID-1, pInd)
     })
 
 
