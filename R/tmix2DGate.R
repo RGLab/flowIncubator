@@ -27,10 +27,10 @@ tmix2DGate <- function(fr, channels, K, quantile = 0.85, trans = 0, ...){
     
   #construct polygon gates 
   gates <- mapply(1:K, quantile, FUN = function(k, q, filter){
-        flowViz:::ell2Polygon(openCyto:::.getEllipseGate(filter = tmix_results
+        as(openCyto:::.getEllipseGate(filter = tmix_results
                 , include = k,
                 quantile = q
-                ,trans = 0))
+                ,trans = 0), "polygonGate")
       })
   filters(gates)
 }
