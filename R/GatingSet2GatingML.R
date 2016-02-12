@@ -6,6 +6,8 @@
 #' 2. Rescale gate boundaries with flowJoTrans() so gates show up in flowJo
 #' 3. Save gates and hierarchy structure to R environment
 #' 4. Write environment out to gatingML using write.GatingML()
+#' @import flowUtils write.gatingML
+#' @import XML saveXML xmlTreeParse
 #' @examples 
 #' \dontrun{
 #' require(flowWorkspace)
@@ -19,7 +21,7 @@ GatingSet2GatingML <- function(gs, outFile){
   flowEnv <- GatingSet2Environment(gs) 
   tmp <- tempfile(fileext = ".xml")#ensure correct file extension for xmlTreeParse to work
   flowUtils::write.gatingML(flowEnv, tmp)
-  tree <- xmlTreeParse(tmp, useInternalNodes = TRUE)
+  tree <- xmlTreeParse(tmp, useInternalNodes = TRUE, trim = FALSE)
   addCustomInfo(tree, gs)
   #add pop (GateSet/BooleanAndGate)
   addGateSet(tree, gs)  
@@ -179,6 +181,7 @@ processGate <- function(gate, translist, inverse = FALSE, flowEnv){
   gate
   
 }
+#' @import XML xmlTree
 addGateSet <- function(doc, gs)
 {
   tree <- xmlTree(doc = doc)
@@ -223,13 +226,15 @@ addGateSet <- function(doc, gs)
 
 
 #' add customInfo nodes to each gate node and add BooleanAndGates
+#' @import XML xmlAttrs getNodeSet
 addCustomInfo <- function(tree, gs){
   nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
   fcs_names <- pData(gs)[["name"]]
     
   gateNodes <- getNodeSet(tree, path = paste0("/gating:Gating-ML/*[contains(@gating:id,'gate_')]"))
-  for(gateNode in gateNodes){
+  for(id in seq_along(gateNodes)){
     # browser()
+    gateNode <- gateNodes[[id]]
     guid <- as.vector(xmlAttrs(gateNode, "gating:id"))
     fields <- strsplit(guid, "_")[[1]]
     gate_id <- as.integer(fields[[2]])
@@ -238,17 +243,26 @@ addCustomInfo <- function(tree, gs){
     nodePath <- nodePaths[gate_id]
     pop_name<- basename(nodePath)
     fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
-    customInfo <- customInfoNodeForGate(gate_id, pop_name, fcs_name)
+    customInfo <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name
+                                        # , type
+                                        )
     addChildren(gateNode, kids = list(customInfo), at = 0)
   }
     
   
 }
-customInfoNodeForGate <- function(gate_id, pop_name, fcs_name){
+
+#' @import XML newXMLNode
+customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
+                                  # , type
+                                  )
+{
   newXMLNode("data-type:custom_info"
           , newXMLNode("cytobank"
                     , newXMLNode("name", pop_name)
+                    , newXMLNode("id", id)
                     , newXMLNode("gate_id", gate_id)
+                    # , newXMLNode("type", type)
                     , newXMLNode("fcs_file_filename", fcs_name)
                     , newXMLNode("definition", "{'scale':{'x':{'flag':4,'argument':'5','min':-20,'max':10000.0,'bins':256,'size':256},'y':{'flag':4,'argument':'5','min':-20.0,'max':10000.0,'bins':256,'size':256}}}")
   
