@@ -237,9 +237,9 @@ addCustomInfo <- function(tree, gs){
     
     nodePath <- nodePaths[gate_id]
     pop_name<- basename(nodePath)
-    fcs_name <- fcs_names[fcs_id]
+    fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
     customInfo <- customInfoNodeForGate(gate_id, pop_name, fcs_name)
-    addChildren(gateNode, kids = list(customInfo))
+    addChildren(gateNode, kids = list(customInfo), at = 0)
   }
     
   
