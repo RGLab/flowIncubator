@@ -129,6 +129,21 @@ GatingSet2Environment <- function(gs) {
   }
   flowEnv
 }
+
+#' @importFrom base64enc base64encode base64decode
+base64encode_cytobank <- function(x){
+  x <- base64encode(charToRaw(x))
+  x <- gsub("=", ".", x)
+  x <- gsub("\\+", "_", x)
+  x <- gsub("/", "", x) 
+  x
+}
+base64decode_cytobank <- function(x){
+  x <- gsub("\\.", "=", x)
+  x <- gsub("_", "\\+", x)
+  # x <- gsub("", "/", x)
+  base64decode(x)
+}
 setMethod("transform", signature = c("polygonGate"), function(`_data`, ...){
   .transform.polygonGate(`_data`, ...)
 })
@@ -243,10 +258,16 @@ addCustomInfo <- function(tree, gs){
     nodePath <- nodePaths[gate_id]
     pop_name<- basename(nodePath)
     fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
+    
     customInfo <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name
                                         # , type
                                         )
     addChildren(gateNode, kids = list(customInfo), at = 0)
+    
+    #modify id
+    guid.new <- paste("Gate", id, base64encode_cytobank(pop_name), sep = "_")
+    xmlAttrs(gateNode) <- c("gating:id" = guid.new)
+    
   }
     
   
@@ -257,7 +278,8 @@ customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
                                   # , type
                                   )
 {
-  newXMLNode("data-type:custom_info"
+  
+  newXMLNode("data-type:custom_info", namespaceDefinitions = c("data-type" = "")
           , newXMLNode("cytobank"
                     , newXMLNode("name", pop_name)
                     , newXMLNode("id", id)
@@ -268,5 +290,6 @@ customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
   
                   )
         )
+  
 }
 
