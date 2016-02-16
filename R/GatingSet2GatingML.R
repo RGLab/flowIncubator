@@ -12,6 +12,7 @@
 #' \dontrun{
 #' require(flowWorkspace)
 #' require(XML)
+#' library(base64enc)
 #' localPath <- "~/rglab/workspace/openCyto"
 #' gs <- load_gs(file.path(localPath,"misc/testSuite/gs-tcell_asinhtGm2"))
 #' outFile <- tempfile(fileext = ".xml")
@@ -21,7 +22,8 @@ GatingSet2GatingML <- function(gs, outFile){
   flowEnv <- GatingSet2Environment(gs) 
   tmp <- tempfile(fileext = ".xml")#ensure correct file extension for xmlTreeParse to work
   flowUtils::write.gatingML(flowEnv, tmp)
-  tree <- xmlTreeParse(tmp, useInternalNodes = TRUE, trim = FALSE)
+  tree <- xmlTreeParse(tmp, useInternalNodes = T, trim = FALSE)
+  # browser()
   addCustomInfo(tree, gs)
   #add pop (GateSet/BooleanAndGate)
   addGateSet(tree, gs)  
@@ -221,20 +223,20 @@ addGateSet <- function(doc, gs)
     attrs = c("gating:id" = paste("GateSet", gate_id, sep = "_"))
     # browser()
     tree$addNode("gating:BooleanGate", attrs = attrs, close = FALSE)
-    tree$addNode("data-type:custom_info", close = FALSE)
-    tree$addNode("cytobank", close = FALSE)
-    tree$addNode("name", pop_name)
-    tree$addNode("gate_set_id", gate_id)
-    tree$addNode("definition", paste0("{'gates':[", gate_id_path, "],'negGates':[]}"))
-    tree$closeTag()
-    tree$closeTag()
-    tree$addNode("gating:and", close = FALSE)
-    #create two dummy reference
-    for(i in 1:2){
-      attrs = c("gating:ref" = paste("gate", gate_id, "1", sep = "_"))
-      tree$addNode("gating:gateReference", attrs = attrs)  
-    }
-    tree$closeTag()
+      tree$addNode("data-type:custom_info", close = FALSE)
+        tree$addNode("cytobank", close = FALSE)
+          tree$addNode("name", pop_name)
+          tree$addNode("gate_set_id", gate_id)
+          tree$addNode("definition", paste0("{'gates':[", gate_id_path, "],'negGates':[]}"))
+        tree$closeTag()
+      tree$closeTag()
+      tree$addNode("gating:and", close = FALSE)
+      #create two dummy reference
+      for(i in 1:2){
+        attrs = c("gating:ref" = paste("gate", gate_id, "1", sep = "_"))
+        tree$addNode("gating:gateReference", attrs = attrs)  
+      }
+      tree$closeTag()
     tree$closeTag()
   }
 }
@@ -245,7 +247,7 @@ addGateSet <- function(doc, gs)
 addCustomInfo <- function(tree, gs){
   nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
   fcs_names <- pData(gs)[["name"]]
-    
+browser()    
   gateNodes <- getNodeSet(tree, path = paste0("/gating:Gating-ML/*[contains(@gating:id,'gate_')]"))
   for(id in seq_along(gateNodes)){
     # browser()
@@ -258,38 +260,38 @@ addCustomInfo <- function(tree, gs){
     nodePath <- nodePaths[gate_id]
     pop_name<- basename(nodePath)
     fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
-    
-    customInfo <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name
-                                        # , type
-                                        )
-    addChildren(gateNode, kids = list(customInfo), at = 0)
-    
+    # browser()
+    #copy the node to a sub tree
+    subtree <- xmlTree(doc = xmlDoc(gateNode))
+    #add custom info
+    customInfoNodeForGate(subtree, id, gate_id, pop_name, fcs_name)
+    newNode <- xmlRoot(subtree)
     #modify id
     guid.new <- paste("Gate", id, base64encode_cytobank(pop_name), sep = "_")
-    xmlAttrs(gateNode) <- c("gating:id" = guid.new)
-    
+    xmlAttrs(newNode) <- c("gating:id" = guid.new)
+    #update the node
+    replaceNodes(gateNode, newNode)
   }
     
   
 }
 
 #' @import XML newXMLNode
-customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
+customInfoNodeForGate <- function(subtree, id, gate_id, pop_name, fcs_name
                                   # , type
                                   )
 {
-  
-  newXMLNode("data-type:custom_info", namespaceDefinitions = c("data-type" = "")
-          , newXMLNode("cytobank"
-                    , newXMLNode("name", pop_name)
-                    , newXMLNode("id", id)
-                    , newXMLNode("gate_id", gate_id)
-                    # , newXMLNode("type", type)
-                    , newXMLNode("fcs_file_filename", fcs_name)
-                    , newXMLNode("definition", "{'scale':{'x':{'flag':4,'argument':'5','min':-20,'max':10000.0,'bins':256,'size':256},'y':{'flag':4,'argument':'5','min':-20.0,'max':10000.0,'bins':256,'size':256}}}")
-  
-                  )
-        )
-  
+ 
+ #avoid using newXMLNode since it is not segfault-free.
+  subtree$addNode("data-type:custom_info", close = FALSE)
+    subtree$addNode("cytobank", close = FALSE)
+      subtree$addNode("name", pop_name)
+      subtree$addNode("id", id)
+      subtree$addNode("gate_id", gate_id)
+    # subtree$addNode("type", type)
+      subtree$addNode("fcs_file_filename", fcs_name)
+      subtree$addNode("definition", "{'scale':{'x':{'flag':4,'argument':'5','min':-20,'max':10000.0,'bins':256,'size':256},'y':{'flag':4,'argument':'5','min':-20.0,'max':10000.0,'bins':256,'size':256}}}")
+    subtree$closeTag()
+subtree$closeTag()
 }
 
