@@ -182,16 +182,15 @@ processGate <- function(gate, translist, inverse = FALSE, flowEnv){
     nMatched <- sum(ind)
     if(nMatched == 1){
       
-      trans.obj <- translist[[which(ind)]]
-      if(inverse)
-        trans.fun <- trans.obj[["inverse"]] 
-      else
-        trans.fun <- trans.obj[["transform"]] 
+      # trans.obj <- translist[[which(ind)]]
+#       if(inverse)
+#         trans.fun <- trans.obj[["inverse"]] 
+#       else
+#         trans.fun <- trans.obj[["transform"]] 
       #rescale
-      gate <- transform(gate, trans.fun, param)
+      # gate <- transform(gate, trans.fun, param)
       
       #attach trans reference
-      transID <- 
       gate@parameters[[i]] <- flowEnv[[transNames[ind]]]
     }else if(nMatched > 1)
       stop("multiple trans matched to :", param)
@@ -274,9 +273,22 @@ addCustomInfo <- function(root, gs){
         nodePath <- nodePaths[gate_id]
         pop_name<- basename(nodePath)
         fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
+        gate <- getGate(gs[[1]], nodePath)
+        gate_type <- class(gate)
+        if(gate_type == "rectangleGate"){
+          if(length(parameters(gate)) == 1)
+            gate_type <- "RangeGate"
+          else
+            gate_type <- "RectangleGate"
+        }else if(gate_type == "polygonGate")
+          gate_type <- "PolygonGate"
+        else if(gate_type == "ellipsoidGate")
+          gate_type <- "EllipseGate"
+        else
+          stop("unsupported gate: ", gate_type)
         # browser()
         #insert custom info
-        customNode <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name)
+        customNode <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name, gate_type)
         newNode <- addChildren(curNode, kids = list(customNode), at = 0)        
         #modify id
         guid.new <- paste("Gate", id, base64encode_cytobank(pop_name), sep = "_")
@@ -291,20 +303,23 @@ addCustomInfo <- function(root, gs){
 }
 
 #' @import XML newXMLNode
-customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
-                                  # , type
-                                  )
+customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name, type)
 {
-  definition <- list(scale = list(x = list(flag = 4
-                                            , argument = "5"
-                                            , min = -20 
-                                            , max = 10000.0
-                                            , bins = 256
-                                            , size = 256
-                                           )
-                                  )
-                    )
-
+  myscale <- list(flag = 1
+                  , argument = "1"
+                  , min = 0 
+                  , max = 260000.0
+                  , bins = 256
+                  , size = 256
+  )
+  definition <- list(scale = list())
+  if(type == "RangeGate")
+    definition[["scale"]] <- myscale
+  else{
+    definition[["scale"]][["x"]] <- myscale
+    definition[["scale"]][["y"]] <- myscale
+  }
+    
   definition <- toJSON(definition, auto_unbox = TRUE)
  #avoid using newXMLNode since it is not segfault-free.
   xmlNode("data-type:custom_info"
@@ -312,7 +327,7 @@ customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
           , xmlNode("name", pop_name)
           , xmlNode("id", id)
           , xmlNode("gate_id", gate_id)
-      # , xmlNode("type", type)
+          , xmlNode("type", type)
           , xmlNode("fcs_file_filename", fcs_name)
           , xmlNode("definition", I(definition))
           )
