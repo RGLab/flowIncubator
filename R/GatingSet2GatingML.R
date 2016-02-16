@@ -22,12 +22,13 @@ GatingSet2GatingML <- function(gs, outFile){
   flowEnv <- GatingSet2Environment(gs) 
   tmp <- tempfile(fileext = ".xml")#ensure correct file extension for xmlTreeParse to work
   flowUtils::write.gatingML(flowEnv, tmp)
-  tree <- xmlTreeParse(tmp, useInternalNodes = T, trim = FALSE)
+  tree <- xmlTreeParse(tmp, trim = FALSE)
+  root <- xmlRoot(tree)
   # browser()
-  addCustomInfo(tree, gs)
+  root <- addCustomInfo(root, gs)
   #add pop (GateSet/BooleanAndGate)
-  addGateSet(tree, gs)  
-  saveXML(tree, file = outFile)
+  root <- addGateSets(root, gs)  
+  saveXML(root, file = outFile)
 }
 
 
@@ -199,99 +200,111 @@ processGate <- function(gate, translist, inverse = FALSE, flowEnv){
   
 }
 #' @import XML xmlTree
-addGateSet <- function(doc, gs)
+addGateSets <- function(root, gs)
 {
-  tree <- xmlTree(doc = doc)
+  
   nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
-  for(gate_id in seq_along(nodePaths)){
-    nodePath <- nodePaths[gate_id]
-    curNode <- nodePath
-    pop_name <- basename(nodePath)
-    gate_id_path <- as.character(gate_id)
-    # browser()
-    repeat{
-      curNode <- getParent(gs, curNode)
-      if(curNode == "root")
-        break
-      else{
-        cur_parent_id <- match(curNode, nodePaths)
-        gate_id_path <- paste(cur_parent_id, gate_id_path, sep = ",")
-      }
-        
-    }
-    
-    attrs = c("gating:id" = paste("GateSet", gate_id, sep = "_"))
-    # browser()
-    tree$addNode("gating:BooleanGate", attrs = attrs, close = FALSE)
-      tree$addNode("data-type:custom_info", close = FALSE)
-        tree$addNode("cytobank", close = FALSE)
-          tree$addNode("name", pop_name)
-          tree$addNode("gate_set_id", gate_id)
-          tree$addNode("definition", paste0("{'gates':[", gate_id_path, "],'negGates':[]}"))
-        tree$closeTag()
-      tree$closeTag()
-      tree$addNode("gating:and", close = FALSE)
-      #create two dummy reference
-      for(i in 1:2){
-        attrs = c("gating:ref" = paste("gate", gate_id, "1", sep = "_"))
-        tree$addNode("gating:gateReference", attrs = attrs)  
-      }
-      tree$closeTag()
-    tree$closeTag()
-  }
+  # browser()
+  newNodes <- lapply(seq_along(nodePaths), function(gate_id){
+                      nodePath <- nodePaths[gate_id]
+                      curNode <- nodePath
+                      pop_name <- basename(nodePath)
+                      gate_id_path <- as.character(gate_id)
+                      # browser()
+                      repeat{
+                        curNode <- getParent(gs, curNode)
+                        if(curNode == "root")
+                          break
+                        else{
+                          cur_parent_id <- match(curNode, nodePaths)
+                          gate_id_path <- paste(cur_parent_id, gate_id_path, sep = ",")
+                        }
+                          
+                      }
+                      GateSetNode(gate_id, pop_name, gate_id_path)
+                    })
+  
+  addChildren(root, kids = newNodes)
 }
 
+GateSetNode <- function(gate_id, pop_name, gate_id_path){
+
+  attrs = c("gating:id" = paste("GateSet", gate_id, sep = "_"))
+  
+  json <- paste0("{\\\"gates\\\":[", gate_id_path, "],\\\"negGates\\\":[]}")
+  json <- I(json) #avoid quotes to be escaped
+  xmlNode("gating:BooleanGate", attrs = attrs
+          , xmlNode("data-type:custom_info"
+                    , xmlNode("cytobank"
+                              , xmlNode("name", pop_name)
+                              , xmlNode("gate_set_id", gate_id)
+                              , xmlNode("definition", json)
+                              )
+                    )
+          
+         ,  xmlNode("gating:and"
+                  #create two dummy reference
+                  , .children = lapply(1:2, function(i){
+                    attrs = c("gating:ref" = paste("gate", gate_id, "1", sep = "_"))
+                    xmlNode("gating:gateReference", attrs = attrs)  
+                  })
+                )
+        )
+}
 
 #' add customInfo nodes to each gate node and add BooleanAndGates
 #' @import XML xmlAttrs getNodeSet
-addCustomInfo <- function(tree, gs){
+addCustomInfo <- function(root, gs){
   nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
   fcs_names <- pData(gs)[["name"]]
-browser()    
-  gateNodes <- getNodeSet(tree, path = paste0("/gating:Gating-ML/*[contains(@gating:id,'gate_')]"))
-  for(id in seq_along(gateNodes)){
-    # browser()
-    gateNode <- gateNodes[[id]]
-    guid <- as.vector(xmlAttrs(gateNode, "gating:id"))
-    fields <- strsplit(guid, "_")[[1]]
-    gate_id <- as.integer(fields[[2]])
-    fcs_id <- as.integer(fields[[3]])
+
+  
+  for(id in 1:length(root)){
     
-    nodePath <- nodePaths[gate_id]
-    pop_name<- basename(nodePath)
-    fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
-    # browser()
-    #copy the node to a sub tree
-    subtree <- xmlTree(doc = xmlDoc(gateNode))
-    #add custom info
-    customInfoNodeForGate(subtree, id, gate_id, pop_name, fcs_name)
-    newNode <- xmlRoot(subtree)
-    #modify id
-    guid.new <- paste("Gate", id, base64encode_cytobank(pop_name), sep = "_")
-    xmlAttrs(newNode) <- c("gating:id" = guid.new)
-    #update the node
-    replaceNodes(gateNode, newNode)
+    curNode <- root[[id]]
+    guid <- as.vector(xmlAttrs(curNode, "gating:id"))
+    if(!is.null(guid)&&grepl("gate_", guid)){
+        # browser()
+        fields <- strsplit(guid, "_")[[1]]
+        gate_id <- as.integer(fields[[2]])
+        fcs_id <- as.integer(fields[[3]])
+        
+        nodePath <- nodePaths[gate_id]
+        pop_name<- basename(nodePath)
+        fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
+        # browser()
+        #insert custom info
+        customNode <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name)
+        newNode <- addChildren(curNode, kids = list(customNode), at = 0)        
+        #modify id
+        guid.new <- paste("Gate", id, base64encode_cytobank(pop_name), sep = "_")
+        xmlAttrs(newNode, suppressNamespaceWarning = TRUE, append = FALSE) <- c("gating:id" = guid.new)
+        #update the tree
+        root[[id]] <- newNode  
+      
+    }
   }
-    
+  root
   
 }
 
 #' @import XML newXMLNode
-customInfoNodeForGate <- function(subtree, id, gate_id, pop_name, fcs_name
+customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
                                   # , type
                                   )
 {
- 
+ json <- "{'scale':{'x':{'flag':4,'argument':'5','min':-20,'max':10000.0,'bins':256,'size':256},'y':{'flag':4,'argument':'5','min':-20.0,'max':10000.0,'bins':256,'size':256}}}"
+ json <- I(json)
  #avoid using newXMLNode since it is not segfault-free.
-  subtree$addNode("data-type:custom_info", close = FALSE)
-    subtree$addNode("cytobank", close = FALSE)
-      subtree$addNode("name", pop_name)
-      subtree$addNode("id", id)
-      subtree$addNode("gate_id", gate_id)
-    # subtree$addNode("type", type)
-      subtree$addNode("fcs_file_filename", fcs_name)
-      subtree$addNode("definition", "{'scale':{'x':{'flag':4,'argument':'5','min':-20,'max':10000.0,'bins':256,'size':256},'y':{'flag':4,'argument':'5','min':-20.0,'max':10000.0,'bins':256,'size':256}}}")
-    subtree$closeTag()
-subtree$closeTag()
+  xmlNode("data-type:custom_info"
+      , xmlNode("cytobank"
+          , xmlNode("name", pop_name)
+          , xmlNode("id", id)
+          , xmlNode("gate_id", gate_id)
+      # , xmlNode("type", type)
+          , xmlNode("fcs_file_filename", fcs_name)
+          , xmlNode("definition", json)
+          )
+      )
 }
 
