@@ -13,6 +13,7 @@
 #' require(flowWorkspace)
 #' require(XML)
 #' library(base64enc)
+#' library(jsonlite)
 #' localPath <- "~/rglab/workspace/openCyto"
 #' gs <- load_gs(file.path(localPath,"misc/testSuite/gs-tcell_asinhtGm2"))
 #' outFile <- tempfile(fileext = ".xml")
@@ -209,7 +210,7 @@ addGateSets <- function(root, gs)
                       nodePath <- nodePaths[gate_id]
                       curNode <- nodePath
                       pop_name <- basename(nodePath)
-                      gate_id_path <- as.character(gate_id)
+                      gate_id_path <- gate_id
                       # browser()
                       repeat{
                         curNode <- getParent(gs, curNode)
@@ -217,7 +218,7 @@ addGateSets <- function(root, gs)
                           break
                         else{
                           cur_parent_id <- match(curNode, nodePaths)
-                          gate_id_path <- paste(cur_parent_id, gate_id_path, sep = ",")
+                          gate_id_path <- c(cur_parent_id, gate_id_path)
                         }
                           
                       }
@@ -227,18 +228,19 @@ addGateSets <- function(root, gs)
   addChildren(root, kids = newNodes)
 }
 
+#' @importFrom jsonlite toJSON
 GateSetNode <- function(gate_id, pop_name, gate_id_path){
 
   attrs = c("gating:id" = paste("GateSet", gate_id, sep = "_"))
   
-  json <- paste0("{\\\"gates\\\":[", gate_id_path, "],\\\"negGates\\\":[]}")
-  json <- I(json) #avoid quotes to be escaped
+  definition <- toJSON(list(gates = gate_id_path, negGates = vector()))
+  
   xmlNode("gating:BooleanGate", attrs = attrs
           , xmlNode("data-type:custom_info"
                     , xmlNode("cytobank"
                               , xmlNode("name", pop_name)
                               , xmlNode("gate_set_id", gate_id)
-                              , xmlNode("definition", json)
+                              , xmlNode("definition", I(definition))#set AsIs to avoid xml escaping
                               )
                     )
           
@@ -293,8 +295,17 @@ customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
                                   # , type
                                   )
 {
- json <- "{'scale':{'x':{'flag':4,'argument':'5','min':-20,'max':10000.0,'bins':256,'size':256},'y':{'flag':4,'argument':'5','min':-20.0,'max':10000.0,'bins':256,'size':256}}}"
- json <- I(json)
+  definition <- list(scale = list(x = list(flag = 4
+                                            , argument = "5"
+                                            , min = -20 
+                                            , max = 10000.0
+                                            , bins = 256
+                                            , size = 256
+                                           )
+                                  )
+                    )
+
+  definition <- toJSON(definition, auto_unbox = TRUE)
  #avoid using newXMLNode since it is not segfault-free.
   xmlNode("data-type:custom_info"
       , xmlNode("cytobank"
@@ -303,7 +314,7 @@ customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name
           , xmlNode("gate_id", gate_id)
       # , xmlNode("type", type)
           , xmlNode("fcs_file_filename", fcs_name)
-          , xmlNode("definition", json)
+          , xmlNode("definition", I(definition))
           )
       )
 }
