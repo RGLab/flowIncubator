@@ -26,10 +26,10 @@ GatingSet2GatingML <- function(gs, outFile){
   tree <- xmlTreeParse(tmp, trim = FALSE)
   root <- xmlRoot(tree)
   # browser()
-  guid_mapping <- new.env(parent = emptyenv())
-  root <- addCustomInfo(root, gs, guid_mapping)
+  
+  root <- addCustomInfo(root, gs, flowEnv)
   #add pop (GateSet/BooleanAndGate)
-  root <- addGateSets(root, gs, guid_mapping)  
+  root <- addGateSets(root, gs, flowEnv[["guid_mapping"]])  
   saveXML(root, file = outFile)
 }
 
@@ -253,7 +253,7 @@ GateSetNode <- function(gate_id, pop_name, gate_id_path, nodePaths, guid_mapping
                   #create two dummy reference
                   , .children = lapply(ref_gate_id_path, function(gate_id){
                     
-                    guid <- guid_mapping[[as.character(gate_id)]]
+                    guid <- guid_mapping[[gate_id]]
                     attrs = c("gating:ref" = guid)
                     xmlNode("gating:gateReference", attrs = attrs)  
                   })
@@ -263,17 +263,19 @@ GateSetNode <- function(gate_id, pop_name, gate_id_path, nodePaths, guid_mapping
 
 #' add customInfo nodes to each gate node and add BooleanAndGates
 #' @import XML xmlAttrs getNodeSet
-addCustomInfo <- function(root, gs, guid_mapping){
+addCustomInfo <- function(root, gs, flowEnv){
   nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
-  fcs_names <- pData(gs)[["name"]]
-
-  
+  pd <- pData(gs)
+  fcs_names <- pd[["name"]]
+  fcs_guids <- rownames(pd)
+  translist <- getTransformations(gs[[1]], only.function = FALSE)
+  transNames <- names(translist)
   for(id in 1:length(root)){
     
     curNode <- root[[id]]
     guid <- as.vector(xmlAttrs(curNode, "gating:id"))
     if(!is.null(guid)&&grepl("gate_", guid)){
-        # browser()
+        #parse pop and fcs info from guid
         fields <- strsplit(guid, "_")[[1]]
         gate_id <- as.integer(fields[[2]])
         fcs_id <- as.integer(fields[[3]])
@@ -281,7 +283,10 @@ addCustomInfo <- function(root, gs, guid_mapping){
         nodePath <- nodePaths[gate_id]
         pop_name<- basename(nodePath)
         fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
-        gate <- getGate(gs[[1]], nodePath)
+        fcs_guid <- fcs_guids[fcs_id]
+        # browser()
+        
+        gate <- flowEnv[[guid]]
         gate_type <- class(gate)
         if(gate_type == "rectangleGate"){
           if(length(parameters(gate)) == 1)
@@ -295,8 +300,51 @@ addCustomInfo <- function(root, gs, guid_mapping){
         else
           stop("unsupported gate: ", gate_type)
         # browser()
+        
+        #parse scale info from gate parameter
+        chnls <- names(parameters(gate))
+        rng <- apply(exprs(getData(gs[[fcs_guid]], j = chnls)), 2, range)
+        scale <- lapply(gate@parameters@.Data, function(param){
+          # browser()
+          if(is(param, "unitytransform")){
+            chnl <- as.vector(parameters(param))
+            thisRng <- rng[, chnl]
+            flag <- 1
+            argument <- "1"
+          }else if(is(param, "singleParameterTransform")){
+            chnl <- as.vector(parameters(param@parameters))
+            thisRng <- rng[, chnl]
+            
+            if(is(param, "asinhtGml2")){
+              flag <- 4
+              argument <- as.character(round(param@T/sinh(1)))
+            }else
+              stop("unsupported transform: ", class(param))
+            # browser()
+            #inverse range into raw scale
+            ind <- sapply(transNames, function(transName)grepl(transName, chnl), USE.NAMES = FALSE)
+            nMatched <- sum(ind)
+            if(nMatched == 1){
+              trans.obj <- translist[[which(ind)]]
+              trans.fun <- trans.obj[["inverse"]] 
+              thisRng <- trans.fun(thisRng)
+            }else
+              stop("can't find the transformation function in GatingSet to inverse the range for :", chnl)
+          }else 
+            stop("unsupported transform: ", class(param))
+          
+          
+          list(flag = flag, argument = argument, min = thisRng[1], max = thisRng[2], bins = 256, size = 256)
+        })
+        if(length(scale) == 1){
+          scale <- unlist(scale, recursive = FALSE)
+        }else{
+          names(scale) <- c("x", "y")
+        }
+        definition <- list(scale = scale)
+        definition <- toJSON(definition, auto_unbox = TRUE)
         #insert custom info
-        customNode <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name, gate_type)
+        customNode <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name, gate_type, definition)
         newNode <- addChildren(curNode, kids = list(customNode), at = 0)        
         #modify id
         guid.new <- paste("Gate", id, base64encode_cytobank(pop_name), sep = "_")
@@ -306,7 +354,7 @@ addCustomInfo <- function(root, gs, guid_mapping){
         
         #record the mapping between gate_id and guid.new for the refs of GateSets
         if(fcs_id == 1)
-          guid_mapping[[as.character(gate_id)]] <- guid.new
+          flowEnv[["guid_mapping"]][[gate_id]] <- guid.new
     }
   }
   root
@@ -314,24 +362,9 @@ addCustomInfo <- function(root, gs, guid_mapping){
 }
 
 #' @import XML newXMLNode
-customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name, type)
+customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name, type, definition)
 {
-  myscale <- list(flag = 1
-                  , argument = "1"
-                  , min = 0 
-                  , max = 260000.0
-                  , bins = 256
-                  , size = 256
-  )
-  definition <- list(scale = list())
-  if(type == "RangeGate")
-    definition[["scale"]] <- myscale
-  else{
-    definition[["scale"]][["x"]] <- myscale
-    definition[["scale"]][["y"]] <- myscale
-  }
     
-  definition <- toJSON(definition, auto_unbox = TRUE)
  #avoid using newXMLNode since it is not segfault-free.
   xmlNode("data-type:custom_info"
       , xmlNode("cytobank"
