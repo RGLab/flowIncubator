@@ -89,7 +89,8 @@ GatingSet2Environment <- function(gs) {
         env <- environment(trans.func)
         asinhtGml2.obj <- asinhtGml2(parameters = compensatedParameter(chnl
                                                                        , spillRefId = compId
-                                                                       , searchEnv = flowEnv)
+                                                                       , searchEnv = flowEnv
+                                                                       , transformationId = chnl)
                                      , M = env[["m"]]
                                      , T = env[["t"]]
                                      , A = env[["a"]]
