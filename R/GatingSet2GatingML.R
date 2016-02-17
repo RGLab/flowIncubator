@@ -284,7 +284,7 @@ addCustomInfo <- function(root, gs, flowEnv){
         
         nodePath <- nodePaths[gate_id]
         pop_name<- basename(nodePath)
-        fcs_name <- ifelse(fcs_id == 1, "", fcs_names[fcs_id])
+        fcs_name <- fcs_names[fcs_id]
         fcs_guid <- fcs_guids[fcs_id]
         # browser()
         
@@ -346,7 +346,7 @@ addCustomInfo <- function(root, gs, flowEnv){
         definition <- list(scale = scale)
         definition <- toJSON(definition, auto_unbox = TRUE)
         #insert custom info
-        customNode <- customInfoNodeForGate(id, gate_id, pop_name, fcs_name, gate_type, definition)
+        customNode <- customInfoNodeForGate(id, gate_id, pop_name, fcs_id, fcs_name, gate_type, definition)
         newNode <- addChildren(curNode, kids = list(customNode), at = 0)        
         #modify id
         guid.new <- paste("Gate", id, base64encode_cytobank(pop_name), sep = "_")
@@ -364,9 +364,12 @@ addCustomInfo <- function(root, gs, flowEnv){
 }
 
 #' @import XML newXMLNode
-customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name, type, definition)
+customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_id, fcs_name, type, definition)
 {
-    
+    if(fcs_id == 1){
+      fcs_id <- fcs_name <- ""
+    }
+      
  #avoid using newXMLNode since it is not segfault-free.
   xmlNode("data-type:custom_info"
       , xmlNode("cytobank"
@@ -374,6 +377,8 @@ customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name, type, definit
           , xmlNode("id", id)
           , xmlNode("gate_id", gate_id)
           , xmlNode("type", type)
+          , xmlNode("version", 1)
+          , xmlNode("fcs_file_id", fcs_id)
           , xmlNode("fcs_file_filename", fcs_name)
           , xmlNode("definition", I(definition))
           )
