@@ -17,9 +17,9 @@
 #' localPath <- "~/rglab/workspace/openCyto"
 #' gs <- load_gs(file.path(localPath,"misc/testSuite/gs-tcell_asinhtGm2"))
 #' outFile <- tempfile(fileext = ".xml")
-#' GatingSet2GatingML(gs, outFile)
+#' GatingSet2GatingML(gs, experiment_number = 51513, outFile)
 #' }
-GatingSet2GatingML <- function(gs, outFile){
+GatingSet2GatingML <- function(gs, experiment_number, outFile){
   flowEnv <- GatingSet2Environment(gs) 
   tmp <- tempfile(fileext = ".xml")#ensure correct file extension for xmlTreeParse to work
   flowUtils::write.gatingML(flowEnv, tmp)
@@ -30,6 +30,8 @@ GatingSet2GatingML <- function(gs, outFile){
   root <- addCustomInfo(root, gs, flowEnv)
   #add pop (GateSet/BooleanAndGate)
   root <- addGateSets(root, gs, flowEnv[["guid_mapping"]])  
+  #add experiment info to custom node
+  root <- addExperimentInfo(root, experiment_number)
   saveXML(root, file = outFile)
 }
 
@@ -378,3 +380,16 @@ customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_name, type, definit
       )
 }
 
+addExperimentInfo <- function(root, experiment_number){
+   
+   customNode <- root[["custom_info"]]
+   customNode <- addChildren(customNode, xmlNode("flowWorkspace-version", packageVersion("flowWorkspace")))
+   
+   newNode <- xmlNode("cytobank"
+                      , xmlNode("experiment_number", experiment_number)
+   )
+   customNode <- addChildren(customNode, newNode, at = 0)
+
+   root[["custom_info"]] <- customNode
+   root            
+}
