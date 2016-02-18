@@ -200,9 +200,19 @@ processGate <- function(gate, translist, inverse = FALSE, flowEnv){
       stop("multiple trans matched to :", param)
   }
   
+  # round
   gate
   
 }
+# round.rectangleGate <- function(x, digits = 0){
+#   x@min <- 
+# }
+# round.polygonGate <- function(x, digits = 0){
+#   
+# }
+# round.ellipsoidGate <- function(x, digits = 0){
+#   
+# }
 #' @import XML xmlTree
 addGateSets <- function(root, gs, ...)
 {
@@ -335,7 +345,7 @@ addCustomInfo <- function(root, gs, flowEnv){
           }else 
             stop("unsupported transform: ", class(param))
           
-          
+          thisRng <- round(thisRng, 2)
           list(flag = flag, argument = argument, min = thisRng[1], max = thisRng[2], bins = 256, size = 256)
         })
         if(length(scale) == 1){
