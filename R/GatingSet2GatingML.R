@@ -282,6 +282,7 @@ addCustomInfo <- function(root, gs, flowEnv){
   fcs_guids <- rownames(pd)
   translist <- getTransformations(gs[[1]], only.function = FALSE)
   transNames <- names(translist)
+  rng <- range(getData(gs[[1]], use.exprs = FALSE))
   for(id in 1:length(root)){
     
     curNode <- root[[id]]
@@ -314,8 +315,6 @@ addCustomInfo <- function(root, gs, flowEnv){
         # browser()
         
         #parse scale info from gate parameter
-        chnls <- names(parameters(gate))
-        rng <- apply(exprs(getData(gs[[fcs_guid]], j = chnls)), 2, range)
         scale <- lapply(gate@parameters@.Data, function(param){
           # browser()
           if(is(param, "unitytransform")){
