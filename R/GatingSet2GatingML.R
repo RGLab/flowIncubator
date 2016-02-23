@@ -76,6 +76,7 @@ GatingSet2Environment <- function(gs) {
   
   #add trans (assume it is identical across samples)
   trans <- getTransformations(gs[[1]], only.function = FALSE)
+  trans.Gm2objs <- list()
   for(transName in names(trans)){
     trans.obj <- trans[[transName]]
     type <- trans.obj[["name"]]
@@ -89,6 +90,7 @@ GatingSet2Environment <- function(gs) {
         #extract parameters
         trans.func <- trans.obj[["transform"]]
         env <- environment(trans.func)
+        transID <- paste0("Tr_Arcsinh_", chnl)
         asinhtGml2.obj <- asinhtGml2(parameters = compensatedParameter(chnl
                                                                        , spillRefId = compId
                                                                        , searchEnv = flowEnv
@@ -96,15 +98,17 @@ GatingSet2Environment <- function(gs) {
                                      , M = env[["m"]]
                                      , T = env[["t"]]
                                      , A = env[["a"]]
-                                     , transformationId = paste0("Tr_Arcsinh_", transName)
+                                     , transformationId = transID
                                     )
         
-        flowEnv[[transName]] <- asinhtGml2.obj
+        flowEnv[[transID]] <- asinhtGml2.obj
+        
       }else
         stop("unsupported trans: ", type)
       
     }
-    
+    #save the trans.obj in the list
+    trans.Gm2objs[[chnl]] <- flowEnv[[transID]]
   }
   
   #add gates and pops(as GateSets)
@@ -120,7 +124,7 @@ GatingSet2Environment <- function(gs) {
 # browser()      
       #transform to raw scale
       #and attach comp and trans reference to parameters
-      gate <- processGate(gate, trans, inverse = TRUE, flowEnv)
+      gate <- processGate(gate, trans.Gm2objs, inverse = TRUE, flowEnv)
 
       parent <- getParent(gs, nodePath)
       if(parent == "root")
@@ -152,50 +156,21 @@ base64decode_cytobank <- function(x){
   x <- gsub("-", "/", x)
   base64decode(x)
 }
-setMethod("transform", signature = c("polygonGate"), function(`_data`, ...){
-  .transform.polygonGate(`_data`, ...)
-})
-.transform.polygonGate <- function(gate, trans.fun, param){
-  browser()
-}
 
-setMethod("transform", signature = c("rectangleGate"), function(`_data`, ...){
-  .transform.rectangleGate(`_data`, ...)
-})
-.transform.rectangleGate <- function(gate, trans.fun, param){
-  
-      min <- gate@min[[param]]
-      if(!is.infinite(min))
-        gate@min[[param]] <- trans.fun(min)
-      
-      max <- gate@max[[param]]
-      if(!is.infinite(max))
-        gate@max[[param]] <- trans.fun(max)
-  
-  gate
-  
-}
-processGate <- function(gate, translist, inverse = FALSE, flowEnv){
+processGate <- function(gate, trans.Gm2objs, inverse = FALSE, flowEnv){
   
   params <- as.vector(parameters(gate))
-  transNames <- names(translist)
-  chnls <- transNames
+  chnls <- names(trans.Gm2objs)
+   
   for(i in seq_along(params)){
     param <- params[i]
     ind <- sapply(chnls, function(chnl)grepl(chnl, param), USE.NAMES = FALSE)
     nMatched <- sum(ind)
     if(nMatched == 1){
-      
-      # trans.obj <- translist[[which(ind)]]
-#       if(inverse)
-#         trans.fun <- trans.obj[["inverse"]] 
-#       else
-#         trans.fun <- trans.obj[["transform"]] 
-      #rescale
-      # gate <- transform(gate, trans.fun, param)
-      
+      chnl <- chnls[ind]
+
       #attach trans reference
-      gate@parameters[[i]] <- flowEnv[[transNames[ind]]]
+      gate@parameters[[i]] <- trans.Gm2objs[[chnl]]
     }else if(nMatched > 1)
       stop("multiple trans matched to :", param)
   }
@@ -204,15 +179,7 @@ processGate <- function(gate, translist, inverse = FALSE, flowEnv){
   gate
   
 }
-# round.rectangleGate <- function(x, digits = 0){
-#   x@min <- 
-# }
-# round.polygonGate <- function(x, digits = 0){
-#   
-# }
-# round.ellipsoidGate <- function(x, digits = 0){
-#   
-# }
+
 #' @import XML xmlTree
 addGateSets <- function(root, gs, ...)
 {
@@ -333,7 +300,7 @@ addCustomInfo <- function(root, gs, flowEnv){
               stop("unsupported transform: ", class(param))
             # browser()
             #inverse range into raw scale
-            ind <- sapply(transNames, function(transName)grepl(transName, chnl), USE.NAMES = FALSE)
+            ind <- sapply(transNames, function(transName)grepl(chnl, transName), USE.NAMES = FALSE)
             nMatched <- sum(ind)
             if(nMatched == 1){
               trans.obj <- translist[[which(ind)]]
