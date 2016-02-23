@@ -25,7 +25,7 @@ GatingSet2GatingML <- function(gs, experiment_number, outFile){
   flowUtils::write.gatingML(flowEnv, tmp)
   tree <- xmlTreeParse(tmp, trim = FALSE)
   root <- xmlRoot(tree)
-  # browser()
+  browser()
   
   root <- addCustomInfo(root, gs, flowEnv)
   #add pop (GateSet/BooleanAndGate)
@@ -124,7 +124,7 @@ GatingSet2Environment <- function(gs) {
 # browser()      
       #transform to raw scale
       #and attach comp and trans reference to parameters
-      gate <- processGate(gate, trans.Gm2objs, inverse = TRUE, flowEnv)
+      gate <- processGate(gate, trans.Gm2objs, compId, flowEnv)
 
       parent <- getParent(gs, nodePath)
       if(parent == "root")
@@ -157,7 +157,7 @@ base64decode_cytobank <- function(x){
   base64decode(x)
 }
 
-processGate <- function(gate, trans.Gm2objs, inverse = FALSE, flowEnv){
+processGate <- function(gate, trans.Gm2objs, compId, flowEnv){
   
   params <- as.vector(parameters(gate))
   chnls <- names(trans.Gm2objs)
@@ -166,7 +166,15 @@ processGate <- function(gate, trans.Gm2objs, inverse = FALSE, flowEnv){
     param <- params[i]
     ind <- sapply(chnls, function(chnl)grepl(chnl, param), USE.NAMES = FALSE)
     nMatched <- sum(ind)
-    if(nMatched == 1){
+    if(nMatched == 0){
+     
+      chnl <- gate@parameters[[i]]@parameters
+      gate@parameters[[i]] <- compensatedParameter(chnl
+                                                   , spillRefId = compId
+                                                   , searchEnv = flowEnv
+                                                   , transformationId = chnl
+                                                   )
+    }else if(nMatched == 1){
       chnl <- chnls[ind]
 
       #attach trans reference
@@ -284,12 +292,13 @@ addCustomInfo <- function(root, gs, flowEnv){
         #parse scale info from gate parameter
         scale <- lapply(gate@parameters@.Data, function(param){
           # browser()
-          if(is(param, "unitytransform")){
+          if(class(param) == "compensatedParameter"){
             chnl <- as.vector(parameters(param))
             thisRng <- rng[, chnl]
             flag <- 1
             argument <- "1"
           }else if(is(param, "singleParameterTransform")){
+            
             chnl <- as.vector(parameters(param@parameters))
             thisRng <- rng[, chnl]
             
