@@ -15,7 +15,7 @@
 #' library(base64enc)
 #' library(jsonlite)
 #' localPath <- "~/rglab/workspace/openCyto"
-#' gs <- load_gs(file.path(localPath,"misc/testSuite/gs-tcell_logicleGm2"))
+#' gs <- load_gs(file.path(localPath,"misc/testSuite/gs-tcell_logicle"))
 #' outFile <- tempfile(fileext = ".xml")
 #' GatingSet2GatingML(gs, experiment_number = 51513, outFile)
 #' }
@@ -77,6 +77,7 @@ GatingSet2Environment <- function(gs) {
   #add trans (assume it is identical across samples)
   trans <- getTransformations(gs[[1]], only.function = FALSE)
   trans.Gm2objs <- list()
+  rescale.gate <- FALSE
   for(transName in names(trans)){
     trans.obj <- trans[[transName]]
     type <- trans.obj[["name"]]
@@ -95,34 +96,40 @@ GatingSet2Environment <- function(gs) {
         #extract parameters
         env <- environment(trans.func)
         transID <- paste0("Tr_Arcsinh_", chnl)
-        asinhtGml2.obj <- asinhtGml2(parameters = param.obj
+        flowEnv[[transID]] <- asinhtGml2(parameters = param.obj
                                      , M = env[["m"]]
                                      , T = env[["t"]]
                                      , A = env[["a"]]
                                      , transformationId = transID
                                     )
-        
-        flowEnv[[transID]] <- asinhtGml2.obj
-        
       }else if(type == "logicleGml2"){
         #extract parameters
         env <- environment(trans.func)
         transID <- paste0("Tr_logicleGml2_", chnl)
-        logicleGml2.obj <- logicletGml2(parameters = param.obj
+        flowEnv[[transID]] <- logicletGml2(parameters = param.obj
                                      , M = env[["M"]]
                                      , T = env[["T"]]
                                      , A = env[["A"]]
                                      , W = env[["W"]]
                                      , transformationId = transID
-        )
-        
-        flowEnv[[transID]] <- logicleGml2.obj
-      }
-      else
+                                    )
+      }else if(type == "logicle"){
+        #extract parameters
+        env <- environment(trans.func)
+        transID <- paste0("Tr_logicle_", chnl)
+        flowEnv[[transID]] <- logicletGml2(parameters = param.obj
+                                        , M = env[["m"]]
+                                        , T = env[["t"]]
+                                        , A = env[["a"]]
+                                        , W = env[["w"]]
+                                        , transformationId = transID
+                                        )
+        rescale.gate <- TRUE  
+      }else
         stop("unsupported trans: ", type)
       
     }
-    #save the trans.obj in the list
+    #save another copy of trans.obj in the list
     trans.Gm2objs[[chnl]] <- flowEnv[[transID]]
   }
   
@@ -139,7 +146,7 @@ GatingSet2Environment <- function(gs) {
 # browser()      
       #transform to raw scale
       #and attach comp and trans reference to parameters
-      gate <- processGate(gate, trans.Gm2objs, compId, flowEnv)
+      gate <- processGate(gate, trans.Gm2objs, compId, flowEnv, rescale.gate, trans)
 
       parent <- getParent(gs, nodePath)
       if(parent == "root")
@@ -171,11 +178,39 @@ base64decode_cytobank <- function(x){
   x <- gsub("-", "/", x)
   base64decode(x)
 }
+setMethod("transform", signature = c("polygonGate"), function(`_data`, ...){
+  .transform.polygonGate(`_data`, ...)
+})
+.transform.polygonGate <- function(gate, trans.fun, param){
+  browser()
+}
+setMethod("transform", signature = c("ellipsoidGate"), function(`_data`, ...){
+  .transform.ellipsoidGate(`_data`, ...)
+})
+.transform.ellipsoidGate <- function(gate, trans.fun, param){
+  browser()
+}
 
-processGate <- function(gate, trans.Gm2objs, compId, flowEnv){
+setMethod("transform", signature = c("rectangleGate"), function(`_data`, ...){
+  .transform.rectangleGate(`_data`, ...)
+})
+.transform.rectangleGate <- function(gate, trans.fun, param){
+  
+  min <- gate@min[[param]]
+  if(!is.infinite(min))
+    gate@min[[param]] <- trans.fun(min)
+  
+  max <- gate@max[[param]]
+  if(!is.infinite(max))
+    gate@max[[param]] <- trans.fun(max)
+  
+  gate
+  
+}
+processGate <- function(gate, gml2.trans, compId, flowEnv, rescale.gate = FALSE, orig.trans){
   
   params <- as.vector(parameters(gate))
-  chnls <- names(trans.Gm2objs)
+  chnls <- names(gml2.trans)
    
   for(i in seq_along(params)){
     param <- params[i]
@@ -191,9 +226,16 @@ processGate <- function(gate, trans.Gm2objs, compId, flowEnv){
                                                    )
     }else if(nMatched == 1){
       chnl <- chnls[ind]
-
+      orig.trans.obj <- orig.trans[[which(ind)]]
+      gml2.trans.obj <- gml2.trans[[chnl]]
+      inv.fun <- orig.trans.obj[["inverse"]] 
+      trans.fun <- eval(gml2.trans.obj)
+      #rescale
+      gate <- transform(gate, inv.fun, param)
+      gate <- transform(gate, trans.fun, param)
+      
       #attach trans reference
-      gate@parameters[[i]] <- trans.Gm2objs[[chnl]]
+      gate@parameters[[i]] <- gml2.trans.obj
     }else if(nMatched > 1)
       stop("multiple trans matched to :", param)
   }
