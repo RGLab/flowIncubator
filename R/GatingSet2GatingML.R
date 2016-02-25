@@ -15,7 +15,7 @@
 #' library(base64enc)
 #' library(jsonlite)
 #' localPath <- "~/rglab/workspace/openCyto"
-#' gs <- load_gs(file.path(localPath,"misc/testSuite/gs-tcell_asinhtGm2"))
+#' gs <- load_gs(file.path(localPath,"misc/testSuite/gs-tcell_logicleGm2"))
 #' outFile <- tempfile(fileext = ".xml")
 #' GatingSet2GatingML(gs, experiment_number = 51513, outFile)
 #' }
@@ -25,7 +25,7 @@ GatingSet2GatingML <- function(gs, experiment_number, outFile){
   flowUtils::write.gatingML(flowEnv, tmp)
   tree <- xmlTreeParse(tmp, trim = FALSE)
   root <- xmlRoot(tree)
-  browser()
+  # browser()
   
   root <- addCustomInfo(root, gs, flowEnv)
   #add pop (GateSet/BooleanAndGate)
@@ -85,16 +85,17 @@ GatingSet2Environment <- function(gs) {
     if(nMatched > 1)
       stop("More than one channels matched to transformation: ", transName)
     else if(nMatched == 1){
+      trans.func <- trans.obj[["transform"]]
       chnl <- chnls[ind]
+      param.obj <- compensatedParameter(chnl
+                           , spillRefId = compId
+                           , searchEnv = flowEnv
+                           , transformationId = chnl)
       if(type == "asinhtGml2"){
         #extract parameters
-        trans.func <- trans.obj[["transform"]]
         env <- environment(trans.func)
         transID <- paste0("Tr_Arcsinh_", chnl)
-        asinhtGml2.obj <- asinhtGml2(parameters = compensatedParameter(chnl
-                                                                       , spillRefId = compId
-                                                                       , searchEnv = flowEnv
-                                                                       , transformationId = chnl)
+        asinhtGml2.obj <- asinhtGml2(parameters = param.obj
                                      , M = env[["m"]]
                                      , T = env[["t"]]
                                      , A = env[["a"]]
@@ -103,7 +104,21 @@ GatingSet2Environment <- function(gs) {
         
         flowEnv[[transID]] <- asinhtGml2.obj
         
-      }else
+      }else if(type == "logicleGml2"){
+        #extract parameters
+        env <- environment(trans.func)
+        transID <- paste0("Tr_logicleGml2_", chnl)
+        logicleGml2.obj <- logicletGml2(parameters = param.obj
+                                     , M = env[["M"]]
+                                     , T = env[["T"]]
+                                     , A = env[["A"]]
+                                     , W = env[["W"]]
+                                     , transformationId = transID
+        )
+        
+        flowEnv[[transID]] <- logicleGml2.obj
+      }
+      else
         stop("unsupported trans: ", type)
       
     }
@@ -305,6 +320,9 @@ addCustomInfo <- function(root, gs, flowEnv){
             if(is(param, "asinhtGml2")){
               flag <- 4
               argument <- as.character(round(param@T/sinh(1)))
+            }else if(is(param, "logicletGml2")){
+             flag <- 4
+             argument <- as.character(round(param@T/sinh(1)))
             }else
               stop("unsupported transform: ", class(param))
             # browser()
