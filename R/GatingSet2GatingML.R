@@ -14,8 +14,8 @@
 #' require(XML)
 #' library(base64enc)
 #' library(jsonlite)
-#' localPath <- "~/rglab/workspace/openCyto"
-#' gs <- load_gs(file.path(localPath,"misc/testSuite/gs-tcell_logicle"))
+#' dataDir <- system.file("extdata",package="flowWorkspaceData")
+#' gs <- load_gs(list.files(dataDir, pattern = "gs_manual",full = TRUE))
 #' outFile <- tempfile(fileext = ".xml")
 #' GatingSet2GatingML(gs, experiment_number = 51513, outFile)
 #' }
@@ -92,6 +92,7 @@ GatingSet2Environment <- function(gs) {
                            , spillRefId = compId
                            , searchEnv = flowEnv
                            , transformationId = chnl)
+      
       if(type == "asinhtGml2"){
         #extract parameters
         env <- environment(trans.func)
@@ -123,6 +124,16 @@ GatingSet2Environment <- function(gs) {
                                         , A = env[["a"]]
                                         , W = env[["w"]]
                                         , transformationId = transID
+                                        )
+        rescale.gate <- TRUE  
+      }else if(type %in% c("flowJo_biexp", "flowJo_fasinh")){
+        transID <- paste0("Tr_Arcsinh_", chnl)
+        #use asinhtGml2 with cytobank default setting
+        flowEnv[[transID]] <- asinhtGml2(parameters = param.obj
+                                         , M = 0.43
+                                         , T = 176.2802
+                                         , A = 0
+                                         , transformationId = transID
                                         )
         rescale.gate <- TRUE  
       }else
@@ -182,13 +193,17 @@ setMethod("transform", signature = c("polygonGate"), function(`_data`, ...){
   .transform.polygonGate(`_data`, ...)
 })
 .transform.polygonGate <- function(gate, trans.fun, param){
-  browser()
+  gate@boundaries[, param] <- trans.fun(gate@boundaries[, param])
+  gate
 }
+
 setMethod("transform", signature = c("ellipsoidGate"), function(`_data`, ...){
-  .transform.ellipsoidGate(`_data`, ...)
+  # .transform.ellipsoidGate(`_data`, ...)
+  transform(as(`_data`, "polygonGate"), ...)
 })
+#TODO: convert cov format to antipotal format since cov can not be transformed independently on each param
 .transform.ellipsoidGate <- function(gate, trans.fun, param){
-  browser()
+  
 }
 
 setMethod("transform", signature = c("rectangleGate"), function(`_data`, ...){
@@ -228,11 +243,14 @@ processGate <- function(gate, gml2.trans, compId, flowEnv, rescale.gate = FALSE,
       chnl <- chnls[ind]
       orig.trans.obj <- orig.trans[[which(ind)]]
       gml2.trans.obj <- gml2.trans[[chnl]]
-      inv.fun <- orig.trans.obj[["inverse"]] 
-      trans.fun <- eval(gml2.trans.obj)
-      #rescale
-      gate <- transform(gate, inv.fun, param)
-      gate <- transform(gate, trans.fun, param)
+      if(rescale.gate){
+        inv.fun <- orig.trans.obj[["inverse"]] 
+        trans.fun <- eval(gml2.trans.obj)
+        #rescale
+        gate <- transform(gate, inv.fun, param)
+        gate <- transform(gate, trans.fun, param)  
+      }
+      
       
       #attach trans reference
       gate@parameters[[i]] <- gml2.trans.obj
@@ -345,7 +363,7 @@ addCustomInfo <- function(root, gs, flowEnv){
         else
           stop("unsupported gate: ", gate_type)
         # browser()
-        
+        # message(guid)
         #parse scale info from gate parameter
         scale <- lapply(gate@parameters@.Data, function(param){
           # browser()
@@ -357,8 +375,12 @@ addCustomInfo <- function(root, gs, flowEnv){
           }else if(is(param, "singleParameterTransform")){
             
             chnl <- as.vector(parameters(param@parameters))
-            thisRng <- rng[, chnl]
-            
+            ind <- grepl(chnl, names(rng))
+            nMatched <- sum(ind)
+            if(nMatched == 1){
+              thisRng <- rng[, ind]
+            }else
+              stop(chnl , " not found in range info")
             if(is(param, "asinhtGml2")){
               flag <- 4
               argument <- as.character(round(param@T/sinh(1)))
