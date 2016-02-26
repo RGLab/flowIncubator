@@ -492,8 +492,15 @@ inverse.rectangleGate <- function(gate, ...){
 }
 
 inverse.polygon <- function(mat, boundary){
+  
+  
   dims <- colnames(mat)
   stopifnot(all(dims %in% colnames(boundary)))
+  
+  #enlarge the boundary to ensure the negated polygon includes all events outside of original polygon
+  boundary["min", ] <- boundary["min", ] - 1e4
+  boundary["max", ] <- boundary["max", ] + 1e4
+  
   x <- dims[1]
   y <- dims[2]
 
