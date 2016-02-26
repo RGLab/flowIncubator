@@ -17,9 +17,9 @@
 #' dataDir <- system.file("extdata",package="flowWorkspaceData")
 #' gs <- load_gs(list.files(dataDir, pattern = "gs_manual",full = TRUE))
 #' outFile <- tempfile(fileext = ".xml")
-#' GatingSet2GatingML(gs, experiment_number = 51513, outFile)
+#' GatingSet2GatingML(gs, outFile)
 #' }
-GatingSet2GatingML <- function(gs, experiment_number, outFile){
+GatingSet2GatingML <- function(gs, outFile){
   flowEnv <- GatingSet2Environment(gs) 
   tmp <- tempfile(fileext = ".xml")#ensure correct file extension for xmlTreeParse to work
   flowUtils::write.gatingML(flowEnv, tmp)
@@ -31,7 +31,7 @@ GatingSet2GatingML <- function(gs, experiment_number, outFile){
   #add pop (GateSet/BooleanAndGate)
   root <- addGateSets(root, gs, flowEnv[["guid_mapping"]])  
   #add experiment info to custom node
-  root <- addExperimentInfo(root, experiment_number)
+  root <- addExperimentInfo(root)
   saveXML(root, file = outFile)
 }
 
@@ -452,7 +452,7 @@ customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_id, fcs_name, type,
       )
 }
 
-addExperimentInfo <- function(root, experiment_number){
+addExperimentInfo <- function(root, experiment_number = ""){
    
    customNode <- root[["custom_info"]]
    customNode <- addChildren(customNode, xmlNode("flowWorkspace-version", packageVersion("flowWorkspace")))
