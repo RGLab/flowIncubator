@@ -147,6 +147,7 @@ GatingSet2Environment <- function(gs) {
   #add gates and pops(as GateSets)
   nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
   fcs_names <- pData(gs)[["name"]]
+  rng <- range(getData(gs[[1]], use.exprs = FALSE))
   for(gate_id in seq_along(nodePaths)){
     nodePath <- nodePaths[gate_id]
     gates <- getGate(gs, nodePath)
@@ -155,10 +156,15 @@ GatingSet2Environment <- function(gs) {
       sn <- fcs_names[fcs_id]
       gate <- gates[[sn]]
 # browser()      
+      #cytobank does not support negated gate
+      #we have to create inverse gate on our end
+      if(flowWorkspace:::isNegated(gs[[sn]], nodePath)){
+        gate <- inverse(gate, rng)
+      }
       #transform to raw scale
       #and attach comp and trans reference to parameters
       gate <- processGate(gate, trans.Gm2objs, compId, flowEnv, rescale.gate, trans)
-
+    
       parent <- getParent(gs, nodePath)
       if(parent == "root")
         parent_id <- 0
@@ -203,7 +209,7 @@ setMethod("transform", signature = c("ellipsoidGate"), function(`_data`, ...){
 })
 #TODO: convert cov format to antipotal format since cov can not be transformed independently on each param
 .transform.ellipsoidGate <- function(gate, trans.fun, param){
-  
+  stop("not impelemented yet!")
 }
 
 setMethod("transform", signature = c("rectangleGate"), function(`_data`, ...){
@@ -464,4 +470,64 @@ addExperimentInfo <- function(root, experiment_number = ""){
 
    root[["custom_info"]] <- customNode
    root            
+}
+
+inverse <- function(gate, boundary){
+  UseMethod("inverse")
+}
+
+inverse.polygonGate <- function(gate, ...){
+  gate@boundaries <- inverse.polygon(gate@boundaries, ...)
+  gate
+}
+inverse.ellipsoidGate <- function(gate, ...){
+  inverse(as(gate, "polygonGate"), ...)
+}
+inverse.rectangleGate <- function(gate, ...){
+  param <- as.vector(parameters(gate))
+  if(length(param) == 1){
+    stop("to be implemented!")
+  }else
+    inverse(as(gate, "polygonGate"), ...)
+}
+
+inverse.polygon <- function(mat, boundary){
+  dims <- colnames(mat)
+  stopifnot(all(dims %in% colnames(boundary)))
+  x <- dims[1]
+  y <- dims[2]
+
+  #find the top most point as starting point
+  ind <- which.max(mat[, y])
+  #reorder mat starting from top most
+  nRow <- nrow(mat)
+  orig.seq <- seq_len(nRow)
+  seq1 <- ind:nRow
+  seq2 <- setdiff(orig.seq, seq1)
+  new.seq <- c(seq1, seq2)
+  new.seq
+  mat.new <- mat[new.seq, ]
+  
+  
+  mat.inv <- mat.new[1, ]
+  #extend to upper bound
+  pt1 <- c(top.most[x], boundary["max", y])
+  mat.inv <- rbind(mat.inv, pt1, deparse.level = 0)
+  #left top
+  mat.inv <- rbind(mat.inv, c(boundary["min", x], boundary["max",y]))
+  #left bottom
+  mat.inv <- rbind(mat.inv, c(boundary["min", x], boundary["min",y]))
+  #right bottom
+  mat.inv <- rbind(mat.inv, c(boundary["max", x], boundary["min",y]))
+  #right top
+  mat.inv <- rbind(mat.inv, c(boundary["max", x], boundary["max",y]))
+  #back to first extended point
+  mat.inv <- rbind(mat.inv, pt1, deparse.level = 0)
+  #connect to the remain mat.new in reverse order
+  mat.inv <- rbind(mat.inv, mat.new[rev(seq_len(nRow)[-1]), ])
+  
+#   plot(mat.inv, type = "n")
+#   polygon(mat.new, col = "red")
+#   polygon(mat.inv, col = "blue")
+  mat.inv
 }
