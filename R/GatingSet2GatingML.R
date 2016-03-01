@@ -130,9 +130,9 @@ GatingSet2Environment <- function(gs) {
         transID <- paste0("Tr_Arcsinh_", chnl)
         #use asinhtGml2 with cytobank default setting
         flowEnv[[transID]] <- asinhtGml2(parameters = param.obj
-                                         , M = 0.43
-                                         , T = 176.2802
-                                         , A = 0
+                                         , M = 0.43429448190325176
+                                         , T = 176.2801790465702
+                                         , A = 0.0
                                          , transformationId = transID
                                         )
         rescale.gate <- TRUE  
@@ -402,7 +402,7 @@ addCustomInfo <- function(root, gs, flowEnv){
             if(nMatched == 1){
               trans.obj <- translist[[which(ind)]]
               trans.fun <- trans.obj[["inverse"]] 
-              thisRng <- trans.fun(thisRng)
+              thisRng <- round(trans.fun(thisRng))#cytobank experiment scale expect 0 digits after decimal
             }else
               stop("can't find the transformation function in GatingSet to inverse the range for :", chnl)
           }else 
@@ -518,7 +518,7 @@ inverse.polygon <- function(mat, boundary){
   
   mat.inv <- mat.new[1, ]
   #extend to upper bound
-  pt1 <- c(top.most[x], boundary["max", y])
+  pt1 <- c(mat.new[1, x], boundary["max", y])
   mat.inv <- rbind(mat.inv, pt1, deparse.level = 0)
   #left top
   mat.inv <- rbind(mat.inv, c(boundary["min", x], boundary["max",y]))
