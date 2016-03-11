@@ -1,3 +1,5 @@
+#' Convert a GatingSet to gatingML
+#' 
 #' this function retrieves the gates from GatingSet 
 #' and writes a customed GatingML-2.0 file  
 #' which can then be imported into cytobank  
