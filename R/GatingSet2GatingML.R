@@ -6,14 +6,13 @@
 #' 2. Rescale gate boundaries with flowJoTrans() so gates show up in flowJo
 #' 3. Save gates and hierarchy structure to R environment
 #' 4. Write environment out to gatingML using write.GatingML()
-#' @import flowUtils write.gatingML
-#' @import XML saveXML xmlTreeParse
+#' @importFrom  flowUtils write.gatingML
+#' @importFrom XML saveXML xmlTreeParse xmlRoot
+#' @export
 #' @examples 
 #' \dontrun{
-#' require(flowWorkspace)
-#' require(XML)
-#' library(base64enc)
-#' library(jsonlite)
+#' library(flowWorkspace)
+#' library(flowIncubator)
 #' dataDir <- system.file("extdata",package="flowWorkspaceData")
 #' gs <- load_gs(list.files(dataDir, pattern = "gs_manual",full = TRUE))
 #' outFile <- tempfile(fileext = ".xml")
@@ -138,8 +137,11 @@ GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
                                          , transformationId = transID
                                         )
         rescale.gate <- TRUE  
-      }else
+      }else{
+        # browser()
         stop("unsupported trans: ", type)
+      }
+        
       
     }
     
@@ -208,6 +210,7 @@ base64decode_cytobank <- function(x){
   x <- gsub("-", "/", x)
   base64decode(x)
 }
+
 setMethod("transform", signature = c("polygonGate"), function(`_data`, ...){
   .transform.polygonGate(`_data`, ...)
 })
@@ -308,6 +311,7 @@ setMethod("transform", signature = c("rectangleGate"), function(`_data`, ...){
   gate
   
 }
+#' @importFrom flowCore eval
 processGate <- function(gate, gml2.trans, compId, flowEnv, rescale.gate = FALSE, orig.trans){
   
   params <- as.vector(parameters(gate))
@@ -349,7 +353,7 @@ processGate <- function(gate, gml2.trans, compId, flowEnv, rescale.gate = FALSE,
   
 }
 
-#' @import XML xmlTree
+#' @importFrom XML xmlTree
 addGateSets <- function(root, gs, ...)
 {
   
@@ -378,6 +382,7 @@ addGateSets <- function(root, gs, ...)
 }
 
 #' @importFrom jsonlite toJSON
+#' @importFrom XML xmlNode
 GateSetNode <- function(gate_id, pop_name, gate_id_path, nodePaths, guid_mapping){
 
   attrs = c("gating:id" = paste("GateSet", gate_id, sep = "_"))
@@ -410,7 +415,7 @@ GateSetNode <- function(gate_id, pop_name, gate_id_path, nodePaths, guid_mapping
 }
 
 #' add customInfo nodes to each gate node and add BooleanAndGates
-#' @import XML xmlAttrs getNodeSet
+#' @importFrom  XML xmlAttrs getNodeSet addChildren xmlAttrs<-
 addCustomInfo <- function(root, gs, flowEnv, cytobank.default.scale = TRUE){
   nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
   pd <- pData(gs)
@@ -526,7 +531,7 @@ addCustomInfo <- function(root, gs, flowEnv, cytobank.default.scale = TRUE){
   
 }
 
-#' @import XML newXMLNode
+#' @importFrom  XML newXMLNode
 customInfoNodeForGate <- function(id, gate_id, pop_name, fcs_id, fcs_name, type, definition)
 {
     if(fcs_id == 1){

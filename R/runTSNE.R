@@ -15,13 +15,13 @@
 #' @param ... other parameters to be passed to the \code{Rtsne} function
 #' @return a \code{matrix} of X and Y coordinates
 #' 
-require(flowWorkspace)
-require(flowIncubator)
-require(data.table)
-require(plyr)
-require(Rtsne)
-
 runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy, seed=999, theta=0.9, ...){
+  require(flowWorkspace)
+  require(flowIncubator)
+  require(data.table)
+  require(plyr)
+  require(Rtsne)
+  
   set.seed(seed) 
   
   #get pData

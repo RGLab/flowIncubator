@@ -3,6 +3,7 @@
 #' The FIL keyword is renamed to 'name' for sample name consistency
 #' No error checking at the moment.
 #' @export 
+#' @importFrom flowWorkspace getKeywords
 setMethod("getKeywords",c("GatingSet","character"),function(obj,y){
       gs <- obj
       kv <- y

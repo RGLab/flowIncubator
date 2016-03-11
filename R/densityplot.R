@@ -6,6 +6,7 @@
 #' @param x GatingHierarchy
 #' @param data node/population name
 #' @export 
+#' @importFrom flowViz densityplot
 setMethod("densityplot", signature = c("GatingHierarchy", "character")
           , definition = function(x, data, ...){
   gh <- x

@@ -7,6 +7,7 @@
 #' @param y \code{character} node name or path
 #' @param z \code{logical} vector as local event indices relative to node \code{y}
 #' @export  
+#' @importFrom ncdfFlow updateIndices
 setMethod("updateIndices",
     signature=signature(obj="GatingHierarchy",y="character",z="logical"), 
     definition=function(obj,y,z)
