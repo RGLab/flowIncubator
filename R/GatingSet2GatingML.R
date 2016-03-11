@@ -19,15 +19,15 @@
 #' outFile <- tempfile(fileext = ".xml")
 #' GatingSet2GatingML(gs, outFile)
 #' }
-GatingSet2GatingML <- function(gs, outFile){
-  flowEnv <- GatingSet2Environment(gs) 
+GatingSet2GatingML <- function(gs, outFile, ...){
+  flowEnv <- GatingSet2Environment(gs, ...) 
   tmp <- tempfile(fileext = ".xml")#ensure correct file extension for xmlTreeParse to work
   flowUtils::write.gatingML(flowEnv, tmp)
   tree <- xmlTreeParse(tmp, trim = FALSE)
   root <- xmlRoot(tree)
   # browser()
   
-  root <- addCustomInfo(root, gs, flowEnv)
+  root <- addCustomInfo(root, gs, flowEnv, ...)
   #add pop (GateSet/BooleanAndGate)
   root <- addGateSets(root, gs, flowEnv[["guid_mapping"]])  
   #add experiment info to custom node
@@ -38,7 +38,9 @@ GatingSet2GatingML <- function(gs, outFile){
 
 #' extract the trans, comps and gates into GML2 compatible format
 #' and save to environment
-GatingSet2Environment <- function(gs) {
+GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
+  if(cytobank.default.scale)
+    warning("With 'cytobank.default.scale' set to 'TRUE', data and gates will be re-transformed with cytobank's default scaling settings, which may affect how gates look like.")
   flowEnv <- new.env(parent = emptyenv())
   
   #parse comp and channel names
@@ -140,6 +142,17 @@ GatingSet2Environment <- function(gs) {
         stop("unsupported trans: ", type)
       
     }
+    
+    if(cytobank.default.scale){
+      rescale.gate <- TRUE 
+      #overwrite the customed scale with default one 
+      flowEnv[[transID]] <- asinhtGml2(parameters = param.obj
+                                       , M = 0.43429448190325176
+                                       , T = 176.2801790465702
+                                       , A = 0.0
+                                       , transformationId = transID)
+    }
+      
     #save another copy of trans.obj in the list
     trans.Gm2objs[[chnl]] <- flowEnv[[transID]]
   }
@@ -398,7 +411,7 @@ GateSetNode <- function(gate_id, pop_name, gate_id_path, nodePaths, guid_mapping
 
 #' add customInfo nodes to each gate node and add BooleanAndGates
 #' @import XML xmlAttrs getNodeSet
-addCustomInfo <- function(root, gs, flowEnv){
+addCustomInfo <- function(root, gs, flowEnv, cytobank.default.scale = TRUE){
   nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
   pd <- pData(gs)
   fcs_names <- pd[["name"]]
@@ -441,8 +454,13 @@ addCustomInfo <- function(root, gs, flowEnv){
         scale <- lapply(gate@parameters@.Data, function(param){
           # browser()
           if(class(param) == "compensatedParameter"){
-            chnl <- as.vector(parameters(param))
-            thisRng <- rng[, chnl]
+            if(cytobank.default.scale){
+             thisRng <- c(1, 262144.0) 
+            }else{
+                chnl <- as.vector(parameters(param))
+                thisRng <- rng[, chnl]    
+              }
+            
             flag <- 1
             argument <- "1"
           }else if(is(param, "singleParameterTransform")){
@@ -451,7 +469,10 @@ addCustomInfo <- function(root, gs, flowEnv){
             ind <- grepl(chnl, names(rng))
             nMatched <- sum(ind)
             if(nMatched == 1){
-              thisRng <- rng[, ind]
+              if(cytobank.default.scale){
+                thisRng <- c(-200, 262144.0)
+              }else
+                thisRng <- rng[, ind]
             }else
               stop(chnl , " not found in range info")
             if(is(param, "asinhtGml2")){
@@ -462,16 +483,18 @@ addCustomInfo <- function(root, gs, flowEnv){
              argument <- as.character(round(param@T/sinh(1)))
             }else
               stop("unsupported transform: ", class(param))
-            # browser()
-            #inverse range into raw scale
-            ind <- sapply(transNames, function(transName)grepl(chnl, transName), USE.NAMES = FALSE)
-            nMatched <- sum(ind)
-            if(nMatched == 1){
-              trans.obj <- translist[[which(ind)]]
-              trans.fun <- trans.obj[["inverse"]] 
-              thisRng <- round(trans.fun(thisRng))#cytobank experiment scale expect 0 digits after decimal
-            }else
-              stop("can't find the transformation function in GatingSet to inverse the range for :", chnl)
+            if(!cytobank.default.scale){
+              #inverse range into raw scale
+              ind <- sapply(transNames, function(transName)grepl(chnl, transName), USE.NAMES = FALSE)
+              nMatched <- sum(ind)
+              if(nMatched == 1){
+                trans.obj <- translist[[which(ind)]]
+                trans.fun <- trans.obj[["inverse"]] 
+                thisRng <- round(trans.fun(thisRng))#cytobank experiment scale expect 0 digits after decimal
+              }else
+                stop("can't find the transformation function in GatingSet to inverse the range for :", chnl)  
+            }
+            
           }else 
             stop("unsupported transform: ", class(param))
           
