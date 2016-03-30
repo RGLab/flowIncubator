@@ -79,6 +79,9 @@ GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
   
   #add trans (assume it is identical across samples)
   trans <- getTransformations(gs[[1]], only.function = FALSE)
+  
+  if(length(trans) == 0)
+    stop("no transformation is found in GatingSet!")
   trans.Gm2objs <- list()
   rescale.gate <- FALSE
   for(transName in names(trans)){
