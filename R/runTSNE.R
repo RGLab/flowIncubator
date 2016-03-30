@@ -1,21 +1,22 @@
-#' function that runs the dimension-reduction algorithm tSNE (t-Distributed Stochastic Neighbor Embedding, Van der Maaten's Barnes-Hut implementation, R pkg 'Rtsne') on a gatingSet
+#' this function runs the dimension-reduction algorithm tSNE (t-Distributed Stochastic Neighbor Embedding, Van der Maaten's Barnes-Hut implementation, R pkg 'Rtsne') on a gatingSet
 #' Will sample the minimal number of cells available in all samples to generate balanced cell counts
 #' 
 #' IMPORTANT: Requires a valid gatingSet with cytokine gates downstream of a parent gate
-#' Also expects that pData(gs) contains at least columns: 'name', 'ptid'
+#' Also expects that pData(gs) contains at least columns: 'name', 'ptid' so we can identify cells later
 #' 
 #' @param gs a GatingSet object, properly gated data with annotation in its pData
 #' @param parentGate a \code{string} describing the gate upstream of the cytokine gates (eg. "CD4", "cd8+", etc...)
 #' @param cytokine a \code{vector} of \code{strings} describing the cytokine gates immediately downstream of parentGate, eg: "IL2", "IFNg"
 #' @param otherMarkers the remaining markers of the data
 #' @param markerMap named list of marker names to gate names, eg.  list("CD4/IL2" = "IL2","CD4/IFNg" = "IFNg")
-#' @param groupBy columns of the \code{gatingSet}
-#' @param seed a seed since tSNE is random
+#' @param groupBy columns of the \code{gatingSet}'s phenoData, same number of cells will be sampled from each group
+#' @param degreeFilter keep cells of this degree and higher, useful when tSNE takes too long to run
+#' @param seed since tSNE is random, need a random seed so we can reproduce results
 #' @param theta parameter to be passed to the \code{Rtsne} function
 #' @param ... other parameters to be passed to the \code{Rtsne} function
 #' @return a \code{matrix} of X and Y coordinates
 #' 
-runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy, seed=999, theta=0.9, ...){
+runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy, degreeFilter = 0,seed=999, theta=0.9, ...){
   require(flowWorkspace)
   require(flowIncubator)
   require(data.table)
@@ -27,6 +28,10 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
   #get pData
   pd <- as.data.table(pData(gs))
   
+  # keep track of metadata columns (we cut these out of the matrix to be fed to Rtsne)
+  meta_cols <- colnames(pd)
+  meta_cols <- c(meta_cols, "degree", "poly")
+  
   #get cell counts of the parent gate
   cat("getting total cell counts from parent gate", parentGate, "\n")
   parent_count <- unlist(lapply(gs, function(gh)getTotal(gh, parentGate)))
@@ -36,12 +41,10 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
   
   setnames(parent_count,c("name",parentGate))
   
-  
   pd <- merge(pd, parent_count,by="name")
   
-  
   nTcells <- min(pd[, sum(get(parentGate)), by = groupBy][, V1])
-  cat("all samples have at least", nTcells, "cells. This will be the sample size...  ")
+  cat("after grouping by '", groupBy, "', all groups will at least", nTcells, "cells." )
   # NOTE: this will fail if one or more sample has no cells !!!
   
   pd[, {
@@ -58,7 +61,7 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
     sn.factor <- unlist(sapply(name, function(sn)rep(sn, .SD[name == sn, get(parentGate)])))
     ind.vec <- split(gInd.logical, sn.factor)
     #       
-#     #reset indices for each sample
+    #     #reset indices for each sample
     for(sn in name)
     {
       thisInd <- ind.vec[[sn]]
@@ -68,7 +71,7 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
     
   }
   , by = groupBy]
-  cat("subsampling complete ! recomputing... ")
+  cat("subsampling complete ! recomputing... \n")
   
   nodes <- getChildren(gs[[1]], parentGate, path = 2)
   
@@ -85,7 +88,7 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
   
   res_mask <- getSingleCellExpression(gs
                                       , nodes
-                                      ,  map = markerMap
+                                      , map = markerMap
                                       , threshold = T
   )
   
@@ -110,11 +113,14 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
   
   cat("\n cytokines:", cytokines)
   cat("\n other markers:", otherMarkers)
+  cat("\n input matrix has", nrow(res_collapse), "rows...")
   
-  included_markers <- c(cytokines, otherMarkers)
-  input_mat <- as.matrix(res_collapse[,included_markers])
+  res_collapse <- subset(res_collapse, degree > degreeFilter)
+  cat("\n input matrix has", nrow(res_collapse), "rows after filtering for cells of degree >", degreeFilter)
   
-  cat("\n starting tSNE run... \n")
+  input_mat <- as.matrix(res_collapse[,!names(res_collapse) %in% meta_cols])
+  
+  cat("\n starting tSNE run at ", date(), "\n")
   system.time(tsne_out <- Rtsne(input_mat, check_duplicates = FALSE, ...))
   
   dat <- tsne_out$Y
@@ -122,7 +128,7 @@ runTSNE <- function(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
   dat <- cbind(dat, res_collapse)
   dat <- data.table(dat)
   
-  cat("DONE !")
+  cat("completed tSNE run at", date(), "!\n")
   return(dat)
   
 }
