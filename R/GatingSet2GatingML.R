@@ -330,7 +330,7 @@ processGate <- function(gate, gml2.trans, compId, flowEnv, rescale.gate = FALSE,
      
       chnl <- gate@parameters[[i]]@parameters
       gate@parameters[[i]] <- compensatedParameter(chnl
-                                                   , spillRefId = compId
+                                                   , spillRefId = "uncompensated"#compId
                                                    , searchEnv = flowEnv
                                                    , transformationId = chnl
                                                    )
