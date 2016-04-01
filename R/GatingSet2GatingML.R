@@ -69,13 +69,25 @@ GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
     #compensation was added in R
     #channel names are not prefixed
     chnls <- as.vector(parameters(comp))
+    
   }
-  compId <- identifier(comp)
-  compId <- paste("Spill", compId, sep = "_")
-  identifier(comp) <- compId
+  
   #add comp
-  if(!is.null(comp))
+  if(!is.null(comp)){
+    #prefix the channels since cytobank expect that
+    prefix_chnls <- paste0("Comp_", chnls)
+    rownames(comp@spillover) <- prefix_chnls #change fluorochromes and leave detector(colnames) unchanged
+    comp <- compensation(comp@spillover)
+    
+    compId <- identifier(comp)
+    compId <- paste("Spill", compId, sep = "_")
+    identifier(comp) <- compId
+    
     flowEnv[[compId]] <- comp
+  }else
+    prefix_chnls <- chnls
+  
+  
   
   #add trans (assume it is identical across samples)
   trans <- getTransformations(gs[[1]], only.function = FALSE)
@@ -94,15 +106,16 @@ GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
     else if(nMatched == 1){
       trans.func <- trans.obj[["transform"]]
       chnl <- chnls[ind]
-      param.obj <- compensatedParameter(chnl
+      prefix_chnl <- prefix_chnls[ind]
+      param.obj <- compensatedParameter(prefix_chnl
                            , spillRefId = compId
                            , searchEnv = flowEnv
-                           , transformationId = chnl)
+                           , transformationId = prefix_chnl)
       
       if(type == "asinhtGml2"){
         #extract parameters
         env <- environment(trans.func)
-        transID <- paste0("Tr_Arcsinh_", chnl)
+        transID <- paste0("Tr_Arcsinh_", prefix_chnl)
         flowEnv[[transID]] <- asinhtGml2(parameters = param.obj
                                      , M = env[["m"]]
                                      , T = env[["t"]]
@@ -112,7 +125,7 @@ GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
       }else if(type == "logicleGml2"){
         #extract parameters
         env <- environment(trans.func)
-        transID <- paste0("Tr_logicleGml2_", chnl)
+        transID <- paste0("Tr_logicleGml2_", prefix_chnl)
         flowEnv[[transID]] <- logicletGml2(parameters = param.obj
                                      , M = env[["M"]]
                                      , T = env[["T"]]
@@ -123,7 +136,7 @@ GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
       }else if(type == "logicle"){
         #extract parameters
         env <- environment(trans.func)
-        transID <- paste0("Tr_logicle_", chnl)
+        transID <- paste0("Tr_logicle_", prefix_chnl)
         flowEnv[[transID]] <- logicletGml2(parameters = param.obj
                                         , M = env[["m"]]
                                         , T = env[["t"]]
@@ -133,7 +146,7 @@ GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
                                         )
         rescale.gate <- TRUE  
       }else if(type %in% c("flowJo_biexp", "flowJo_fasinh")){
-        transID <- paste0("Tr_Arcsinh_", chnl)
+        transID <- paste0("Tr_Arcsinh_", prefix_chnl)
         #use asinhtGml2 with cytobank default setting
         flowEnv[[transID]] <- asinhtGml2(parameters = param.obj
                                          , M = 0.43429448190325176
@@ -476,6 +489,7 @@ addCustomInfo <- function(root, gs, flowEnv, cytobank.default.scale = TRUE){
           }else if(is(param, "singleParameterTransform")){
             
             chnl <- as.vector(parameters(param@parameters))
+            chnl <- sub("(^Comp_)(.*)", "\\2", chnl) #strip the prefix before matching
             ind <- grepl(chnl, names(rng))
             nMatched <- sum(ind)
             if(nMatched == 1){
