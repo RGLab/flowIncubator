@@ -5,7 +5,7 @@
 \title{extract the trans, comps and gates into GML2 compatible format
 and save to environment}
 \usage{
-GatingSet2Environment(gs, cytobank.default.scale = TRUE)
+GatingSet2Environment(gs, cytobank.default.scale = TRUE, showHidden)
 }
 \description{
 extract the trans, comps and gates into GML2 compatible format

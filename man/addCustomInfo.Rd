@@ -4,7 +4,7 @@
 \alias{addCustomInfo}
 \title{add customInfo nodes to each gate node and add BooleanAndGates}
 \usage{
-addCustomInfo(root, gs, flowEnv, cytobank.default.scale = TRUE)
+addCustomInfo(root, gs, flowEnv, cytobank.default.scale = TRUE, showHidden)
 }
 \description{
 add customInfo nodes to each gate node and add BooleanAndGates

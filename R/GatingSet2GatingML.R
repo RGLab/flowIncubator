@@ -20,17 +20,17 @@
 #' outFile <- tempfile(fileext = ".xml")
 #' GatingSet2GatingML(gs, outFile)
 #' }
-GatingSet2GatingML <- function(gs, outFile, ...){
-  flowEnv <- GatingSet2Environment(gs, ...) 
+GatingSet2GatingML <- function(gs, outFile, showHidden = FALSE, ...){
+  flowEnv <- GatingSet2Environment(gs, showHidden = showHidden, ...) 
   tmp <- tempfile(fileext = ".xml")#ensure correct file extension for xmlTreeParse to work
   flowUtils::write.gatingML(flowEnv, tmp)
   tree <- xmlTreeParse(tmp, trim = FALSE)
   root <- xmlRoot(tree)
   # browser()
   
-  root <- addCustomInfo(root, gs, flowEnv, ...)
+  root <- addCustomInfo(root, gs, flowEnv, showHidden = showHidden, ...)
   #add pop (GateSet/BooleanAndGate)
-  root <- addGateSets(root, gs, flowEnv[["guid_mapping"]])  
+  root <- addGateSets(root, gs, flowEnv[["guid_mapping"]], showHidden = showHidden)  
   #add experiment info to custom node
   root <- addExperimentInfo(root)
   saveXML(root, file = outFile)
@@ -39,7 +39,7 @@ GatingSet2GatingML <- function(gs, outFile, ...){
 
 #' extract the trans, comps and gates into GML2 compatible format
 #' and save to environment
-GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
+GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE, showHidden) {
   if(cytobank.default.scale)
     warning("With 'cytobank.default.scale' set to 'TRUE', data and gates will be re-transformed with cytobank's default scaling settings, which may affect how gates look like.")
   flowEnv <- new.env(parent = emptyenv())
@@ -178,7 +178,7 @@ GatingSet2Environment <- function(gs, cytobank.default.scale = TRUE) {
   }
   
   #add gates and pops(as GateSets)
-  nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
+  nodePaths <- getNodes(gs, showHidden = showHidden)[-1]
   fcs_names <- pData(gs)[["name"]]
   rng <- range(getData(gs[[1]], use.exprs = FALSE))
   for(gate_id in seq_along(nodePaths)){
@@ -372,10 +372,10 @@ processGate <- function(gate, gml2.trans, compId, flowEnv, rescale.gate = FALSE,
 }
 
 #' @importFrom XML xmlTree
-addGateSets <- function(root, gs, ...)
+addGateSets <- function(root, gs, showHidden, ...)
 {
   
-  nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
+  nodePaths <- getNodes(gs, showHidden = showHidden)[-1]
   # browser()
   newNodes <- lapply(seq_along(nodePaths), function(gate_id){
                       nodePath <- nodePaths[gate_id]
@@ -434,8 +434,8 @@ GateSetNode <- function(gate_id, pop_name, gate_id_path, nodePaths, guid_mapping
 
 #' add customInfo nodes to each gate node and add BooleanAndGates
 #' @importFrom  XML xmlAttrs getNodeSet addChildren xmlAttrs<-
-addCustomInfo <- function(root, gs, flowEnv, cytobank.default.scale = TRUE){
-  nodePaths <- getNodes(gs, showHidden = TRUE)[-1]
+addCustomInfo <- function(root, gs, flowEnv, cytobank.default.scale = TRUE, showHidden){
+  nodePaths <- getNodes(gs, showHidden = showHidden)[-1]
   pd <- pData(gs)
   fcs_names <- pd[["name"]]
   fcs_guids <- rownames(pd)

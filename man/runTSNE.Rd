@@ -2,11 +2,11 @@
 % Please edit documentation in R/runTSNE.R
 \name{runTSNE}
 \alias{runTSNE}
-\title{function that runs the dimension-reduction algorithm tSNE (t-Distributed Stochastic Neighbor Embedding, Van der Maaten's Barnes-Hut implementation, R pkg 'Rtsne') on a gatingSet
+\title{this function runs the dimension-reduction algorithm tSNE (t-Distributed Stochastic Neighbor Embedding, Van der Maaten's Barnes-Hut implementation, R pkg 'Rtsne') on a gatingSet
 Will sample the minimal number of cells available in all samples to generate balanced cell counts}
 \usage{
 runTSNE(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
-  seed = 999, theta = 0.9, ...)
+  degreeFilter = 0, seed = 999, theta = 0.9, ...)
 }
 \arguments{
 \item{gs}{a GatingSet object, properly gated data with annotation in its pData}
@@ -17,9 +17,11 @@ runTSNE(gs, parentGate, cytokines, otherMarkers, markerMap, groupBy,
 
 \item{markerMap}{named list of marker names to gate names, eg.  list("CD4/IL2" = "IL2","CD4/IFNg" = "IFNg")}
 
-\item{groupBy}{columns of the \code{gatingSet}}
+\item{groupBy}{columns of the \code{gatingSet}'s phenoData, same number of cells will be sampled from each group}
 
-\item{seed}{a seed since tSNE is random}
+\item{degreeFilter}{keep cells of this degree and higher, useful when tSNE takes too long to run}
+
+\item{seed}{since tSNE is random, need a random seed so we can reproduce results}
 
 \item{theta}{parameter to be passed to the \code{Rtsne} function}
 
@@ -32,6 +34,6 @@ a \code{matrix} of X and Y coordinates
 }
 \description{
 IMPORTANT: Requires a valid gatingSet with cytokine gates downstream of a parent gate
-Also expects that pData(gs) contains at least columns: 'name', 'ptid'
+Also expects that pData(gs) contains at least columns: 'name', 'ptid' so we can identify cells later
 }
 

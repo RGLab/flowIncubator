@@ -4,7 +4,7 @@
 \alias{GatingSet2GatingML}
 \title{Convert a GatingSet to gatingML}
 \usage{
-GatingSet2GatingML(gs, outFile, ...)
+GatingSet2GatingML(gs, outFile, showHidden = FALSE, ...)
 }
 \description{
 this function retrieves the gates from GatingSet
