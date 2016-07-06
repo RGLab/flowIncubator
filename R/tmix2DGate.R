@@ -1,6 +1,6 @@
 #' Gating wrapper based on flowClust::tmixFilter
 #' 
-#' It basically calls flowClust to fit K clusters and construct K \code{polygonGate} from them.
+#' It basically calls flowClust to fit K clusters and construct K \code{ellipsoidGate} from them.
 #' 
 #' @param fr \code{flowFrame}
 #' @param channels \code{character} vector of channel/marker names (must be of length 2)
@@ -12,25 +12,25 @@
 #' @export
 #' @examples 
 #' \dontrun{
-#' for(K in 2:4){
-#'     gates <- tmix2DGate(fr = parent, channels = c("CD4", "CD8"), K = K, quantile = 0.9)  
-#'     print(xyplot(`CD8`~`CD4`, parent, smooth = FALSE, xbin = 32, filter = gates, stats = TRUE, main = paste0("K = ", K)))
-#' }
+
+#'     gates <- tmix2DGate(fr = fr, channels = c("CD4", "CD8"), K = 2, quantile = 0.7)  
+#'     autoplot(fr, "CD8","CD4") + geom_gate(gates)
+
 #' }
 tmix2DGate <- function(fr, channels, K, quantile = 0.85, trans = 0, ...){
   if(length(channels)!=2)
     stop("2D gate must have two channels!")
   if(trans != 0)
     stop("trans must be 0!")
-  tmix_filter <- tmixFilter(parameters = channels, K = K, trans = trans,...)
-  tmix_results <- try(filter(fr, tmix_filter), silent = F)
+  
+  tmix_results <- openCyto:::.flowClustFast(fr, channels, K = K, trans = trans,...) 
     
   #construct polygon gates 
   gates <- mapply(1:K, quantile, FUN = function(k, q, filter){
-        as(openCyto:::.getEllipseGate(filter = tmix_results
+        openCyto:::.getEllipseGate(filter = tmix_results
                 , include = k,
                 quantile = q
-                ,trans = 0), "polygonGate")
+                ,trans = 0)
       })
   filters(gates)
 }
