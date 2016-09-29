@@ -16,15 +16,18 @@
 #' @param theta parameter to be passed to the \code{Rtsne} function
 #' @param ... other parameters to be passed to the \code{Rtsne} function
 #' @return a \code{matrix} of X and Y coordinates
-#' 
+#' @import flowWorkspace
+#' @import data.table
+#' @import plyr
+#' @import Rtsne
 runTSNE <- function (gs, parentGate, cytokines, otherMarkers, markerMap, swap,
                      groupBy, degreeFilter = 0, seed = 999, theta = 0.9, ...) {
   
-  require(flowWorkspace)
-  require(flowIncubator)
-  require(data.table)
-  require(plyr)
-  require(Rtsne)
+  # require(flowWorkspace)
+  # require(flowIncubator)
+  # require(data.table)
+  # require(plyr)
+  # require(Rtsne)
   
   set.seed(seed)
   pd <- as.data.table(pData(gs))
