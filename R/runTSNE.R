@@ -1,4 +1,4 @@
-#' this function runs the dimension-reduction algorithm tSNE (t-Distributed Stochastic Neighbor Embedding, Van der Maaten's Barnes-Hut implementation, R pkg 'Rtsne') on a gatingSet
+#' run tSNE from (R pkg 'Rtsne') on a gatingSet
 #' Will sample the minimal number of cells available in all samples to generate balanced cell counts
 #' 
 #' IMPORTANT: Requires a valid gatingSet with cytokine gates downstream of a parent gate
@@ -8,7 +8,7 @@
 #' @param parentGate a \code{string} describing the gate upstream of the cytokine gates (eg. "CD4", "cd8+", etc...)
 #' @param cytokine a \code{vector} of \code{strings} describing the cytokine gates immediately downstream of parentGate, eg: "IL2", "IFNg"
 #' @param otherMarkers the remaining markers of the data
-#' @param markerMap named list of marker names to gate names, eg.  list("CD4/IL2" = "IL2","CD4/IFNg" = "IFNg")
+#' @param markerMap named list of marker names to gate names, eg. list("CD4/IL2" = "IL2","CD4/IFNg" = "IFNg")
 #' @param swap boolean for whether marker and gate names (from markerMap above) should be swapped. Passed onto getSingleCellExpression()
 #' @param groupBy columns of the \code{gatingSet}'s phenoData, same number of cells will be sampled from each group
 #' @param degreeFilter keep cells of this degree and higher, useful when tSNE takes too long to run
@@ -20,15 +20,11 @@
 #' @import data.table
 #' @import plyr
 #' @import Rtsne
-runTSNE <- function (gs, parentGate, cytokines, otherMarkers, markerMap, swap,
+runTSNE <- function (gs, parentGate, cytokines, otherMarkers, markerMap, swap = FALSE,
                      groupBy, degreeFilter = 0, seed = 999, theta = 0.9, ...) {
   
-  # require(flowWorkspace)
-  # require(flowIncubator)
-  # require(data.table)
-  # require(plyr)
-  # require(Rtsne)
-  
+  if (is.null(markerMap)) stop ("required markerMap is missing ! STOPPING....")
+    
   set.seed(seed)
   pd <- as.data.table(pData(gs))
   meta_cols <- colnames(pd)
@@ -42,7 +38,7 @@ runTSNE <- function (gs, parentGate, cytokines, otherMarkers, markerMap, swap,
   pd <- merge(pd, parent_count, by = "name")
   nTcells <- min(pd[, sum(get(parentGate)), by = groupBy][, 
                                                           V1])
-  cat("after grouping by '", groupBy, "', all groups will at least", 
+  cat("after grouping by '", groupBy, "', all groups will have at least", 
       nTcells, "cells.\n")
   pd[, {
     totalEvents <- sum(get(parentGate))
