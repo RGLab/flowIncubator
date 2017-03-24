@@ -1,41 +1,5 @@
-#' directly update node indices without changing gates
-#' 
-#' It is useful when we want to alter the popluation at events level yet
-#' without removing or adding the existing gates. 
-#' 
-#' @param x \code{GatingHierarchy} object
-#' @param y \code{character} node name or path
-#' @param z \code{logical} vector as local event indices relative to node \code{y}
-#' @export  
-#' @importFrom ncdfFlow updateIndices
-setMethod("updateIndices",
-    signature=signature(obj="GatingHierarchy",y="character",z="logical"), 
-    definition=function(obj,y,z)
-    {
-      
-      nodeID <- flowWorkspace:::.getNodeInd(obj, y)
-      #get original indices
-      pInd <- getIndices(obj, y)
-      #update it with the new one
-      #convert to global one by combining it with parent indice
-      pInd[which(pInd)] <- z
-      #added it to gating tree
-      sn <- sampleNames(obj)
-      ptr <- obj@pointer
-      flowWorkspace:::.cpp_setIndices(ptr, sn, nodeID-1, pInd)
-    })
 
 
-#' Convenient wrapper to extract all the descedenat nodes of the given population
-#' @param gh GatingHierarchy object
-#' @param node character that gives the name or path of population node
-#' @export 
-getDescendants <- function(gh, node){
-  nodelist <- new.env(parent=emptyenv())
-  nodelist$v <-integer()
-  flowWorkspace:::.getAllDescendants(gh, node, nodelist)
-  nodelist$v
-}
 #' A wrapper that swaps the channel names with marker names 
 #' 
 #' It is useful to prepare multiple GatingSets for merging when the marker (instead of channel) names are consistent accross batches.
@@ -118,62 +82,6 @@ swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
 
 
 
-#' post process gs to fix channel name discrepancy caused by letter case#' 
-#' 1.between gates defined in xml and fcs
-#' 2.gates with xml
-#' 
-#' The assumption is the channel names is consistent across samples in FCS files.
-#' So basically it loop through all gates and match up the gate parameters to 
-#' the flow data and update it when needed.
-#' @export 
-fixChannelNames <- function(gs){
-  .Defunct("flowWorkspace::updateChannel")  
-  coln <- colnames(getData(gs))
-  for(sn in sampleNames(gs))
-  {
-    gh <- gs[[sn]]
-    nodes <- getNodes(gh)
-    for(node in nodes[-1])
-    {
-      
-      g <- getGate(gh, node)
-      
-      if(class(g) != "booleanFilter")
-      {
-        isUpdate <- FALSE
-        
-        param <- parameters(g)
-        misMatch <- which(is.na(match(param, coln)))
-        #update each mismatched channel
-        for(i in misMatch)
-        {
-          oldN <- param[i]
-          matchInd <- match(tolower(oldN), tolower(coln))
-          if(is.na(matchInd))
-            stop(oldN, "not found in flow Data")
-          else{
-            isUpdate <- TRUE
-            newN <- coln[matchInd]
-            param[i] <- newN
-            
-          }
-        }
-        if(isUpdate){
-          #update the gate
-          oldParam <- parameters(g)
-          
-          message(paste(oldParam, col = ",")," --> ", paste(param, col = ","), "for ", node)
-          parameters(g) <- param
-          setGate(gh, node, g)  
-        }
-        
-      }
-      
-    }
-    message("done")
-  }
-}
-
 #' a uility function to match fcs files based on the channels used by one example FCS file 
 #' 
 #' It uses \link{readFCSPar} to read parameters from FCS header to select target files, 
@@ -200,23 +108,7 @@ grep.FCS <- function(pattern, x){
       
       
     }
-#' fast way of getting channel names from fcs file by only reading header
-#' 
-#' This is a convenient wrapper around \link{read.FCSheader} and \code{flowCore:::readFCSgetPar}.
-#' 
-#' @param fileName \code{character}  fcs file name(path)
-#' @return a \code{character} vector channels/parameters used in this FCS
-#' @export
-#' @examples 
-#' 
-#' readFCSPar(system.file("extdata/0877408774.B08", package = "flowCore"))
-readFCSPar <- function(fileName){
-  txt <- flowCore:::read.FCSheader(fileName)[[1]]
-  nChannels <- as.integer(txt[["$PAR"]])
-  channelNames <- unlist(lapply(1:nChannels,function(i)flowCore:::readFCSgetPar(txt,paste("$P",i,"N",sep="")))) 
-  unname(channelNames)
-  
-}
+
 
 #' a wrapper for \code{save_gslist}
 #' @return a copy of original gslist with modified cdf path when cdf == "move"
