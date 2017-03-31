@@ -2,11 +2,11 @@
 % Please edit documentation in R/runTSNE.R
 \name{runTSNE}
 \alias{runTSNE}
-\title{this function runs the dimension-reduction algorithm tSNE (t-Distributed Stochastic Neighbor Embedding, Van der Maaten's Barnes-Hut implementation, R pkg 'Rtsne') on a gatingSet
+\title{run tSNE from (R pkg 'Rtsne') on a gatingSet
 Will sample the minimal number of cells available in all samples to generate balanced cell counts}
 \usage{
-runTSNE(gs, parentGate, cytokines, otherMarkers, markerMap, swap, groupBy,
-  degreeFilter = 0, seed = 999, theta = 0.9, ...)
+runTSNE(gs, parentGate, cytokines, otherMarkers, markerMap, swap = FALSE,
+  groupBy, degreeFilter = 0, seed = 999, theta = 0.9, ...)
 }
 \arguments{
 \item{gs}{a GatingSet object, properly gated data with annotation in its pData}
@@ -15,7 +15,7 @@ runTSNE(gs, parentGate, cytokines, otherMarkers, markerMap, swap, groupBy,
 
 \item{otherMarkers}{the remaining markers of the data}
 
-\item{markerMap}{named list of marker names to gate names, eg.  list("CD4/IL2" = "IL2","CD4/IFNg" = "IFNg")}
+\item{markerMap}{named list of marker names to gate names, eg. list("CD4/IL2" = "IL2","CD4/IFNg" = "IFNg")}
 
 \item{swap}{boolean for whether marker and gate names (from markerMap above) should be swapped. Passed onto getSingleCellExpression()}
 
