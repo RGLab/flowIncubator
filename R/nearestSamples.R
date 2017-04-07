@@ -55,6 +55,7 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
 #' @param ... other arguments passed to \code{density} call
 #' @importFrom emdist emd emd2d
 #' @importFrom KernSmooth bkde2D
+#' @importFrom parallel mclapply
 .nearestSample <- function(gs, node, target, source, n = 512, bandwidth = c(5, 5), gridsize = c(100, 100), method = c("ks.test","em"), mc.cores = 1,  ...){
   method <- match.arg(method)
   
