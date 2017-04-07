@@ -7,6 +7,10 @@
 #'                                                        By default, all samples other than failed will be used.
 #'                                                        but sometime it is helpful to narrow it down to a few of really good samples. 
 #' @param ... other arguments passed to \code{.nearestSample}
+#'            n an \code{integer} passed to \code{density} call. default is 512.
+#'            bandwidth, gridsize passed to \code{bkde2D} call. default is c(5, 5) and c(100, 100).
+#'            method density similarity calculation method. Either "ks.test" or "em". For 2d gate, "em" is the only choice.
+#'            mc.cores passed to mclapply for parallel computing. Default is 1.
 #' @examples 
 #' \dontrun{
 #' library(flowWorkspace)
@@ -18,6 +22,13 @@
 #' 
 #' #fix the gate for the bad samples
 #' regateNearestSamples(gs, res, "CD3")
+#' 
+#' #run it on 2d gate and customize some parameters
+#' #and enable parallel computing to speed it up
+#' res <- nearestSamples(gs, node = "CD4", failed = "1349_3_Tcell_A06.fcs", gridsize = c(70, 70), mc.cores = 4)
+#' #fix the 2d gate for the bad samples
+#' regateNearestSamples(gs, res, "CD4")
+
 #' }
 #' @export
 nearestSamples <- function(gs, node, failed, passed = NULL, ...){
@@ -41,7 +52,9 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
 #' @param node a \code{character} or \code{numeric} specifing node index
 #' @param n an \code{integer} passed to \code{density} call
 #' @param ... other arguments passed to \code{density} call
-.nearestSample <- function(gs, node, target, source, n = 512, method = c("ks.test","em"), ...){
+#' @importFrom emdist emd emd2d
+#' @importFrom KernSmooth bkde2D
+.nearestSample <- function(gs, node, target, source, n = 512, bandwidth = c(5, 5), gridsize = c(100, 100), method = c("ks.test","em"), mc.cores = 1,  ...){
   method <- match.arg(method)
   
   thisGh <- gs[[target]]
@@ -51,49 +64,75 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
   thisGate <- getGate(thisGh, node)
   params <- parameters(thisGate)
   parentData <- getData(gs,parentNode)[,params]
+  #get data
+  tData <- parentData[[target]]
   
-  if(length(params) == 1){
-    
-    #get data
-    tData <- parentData[[target]]
-    
-    #exclude marginal events below zero
-    #    expression1 <- paste0("`",params,"`>0")
-    #    ef <- char2ExpressionFilter(expression1)
-    #    tData <- Subset(tData,ef)
-    
-    tExpr <- exprs(tData)
-    
-    if(method == "em"){
-      #get 1d density of failed sample
+  #exclude marginal events below zero
+  #    expression1 <- paste0("`",params,"`>0")
+  #    ef <- char2ExpressionFilter(expression1)
+  #    tData <- Subset(tData,ef)
+  
+  tExpr <- exprs(tData)
+  
+  if(length(params) > 2)
+    stop("Imputing Gate on more than 2 dimensions is not supported yet!")
+  
+  if(length(params) == 2)
+    method <- "em"
+  
+  if(method == "em"){
+    #get density of failed sample
+    if(length(params) == 1)
+    {
       tDen <- density(tExpr, n =n ,...)
-      tMat <- matrix(c(tDen$y,tDen$x),ncol = 2)
+      tMat <- matrix(c(tDen$y,tDen$x),ncol = 2)  
+    }else
+    {
+      tDen <- bkde2D(tExpr, bandwidth = bandwidth,  gridsize = gridsize, ...)
+      tMat <- tDen$fhat
+      # contour(tDen$x1, tDen$x2, tDen$fhat)
     }
-    #TODO:customize mc.cores
-    #cal dist from each sample
-    distVec <- lapply(source,function(thisSample){
-      #get 1d density of target sample
-      thisData <- parentData[[thisSample]]
-      #apply the same filter
-      #                              thisData <- Subset(thisData,ef)
-      
-      thisExpr <- exprs(thisData)
-      #cal the dist
-      #                              browser()
-      if(method == "ks.test"){
-        thisDist <- ks.test(tExpr,thisExpr)$statistic
-      }else if(method == "em"){
-        #EM
-        
+    
+  }
+  #TODO:customize mc.cores
+  #cal dist from each sample
+  thisCall <- quote(lapply(source,function(thisSample){
+    #get 1d density of target sample
+    thisData <- parentData[[thisSample]]
+    #apply the same filter
+    #                              thisData <- Subset(thisData,ef)
+    
+    thisExpr <- exprs(thisData)
+    #cal the dist
+    #                              browser()
+    if(method == "ks.test"){
+      thisDist <- ks.test(tExpr,thisExpr)$statistic
+    }else if(method == "em"){
+      #EM
+      if(length(params) == 1){
         thisDen <- density(thisExpr, n =n ,...)
         thisMat <- matrix(c(thisDen$y,thisDen$x),ncol = 2)
-        thisDist <- emd(tMat,thisMat)  
+        thisDist <- emd(tMat,thisMat)    
+      }else
+      {
+        thisDen <- bkde2D(thisExpr, bandwidth = bandwidth,  gridsize = gridsize, ...)
+        contour(thisDen$x1, thisDen$x2, thisDen$fhat)
+        thisMat <- thisDen$fhat
+        thisDist <- emd2d(tMat,thisMat)    
       }
-      ks.test <-
-        
-        
-        thisDist
-    })
+      
+    }
+      
+      thisDist
+  }))
+  
+  if(mc.cores > 1)
+  {
+    thisCall[[1]] <- quote(mclapply)
+    thisCall[["mc.cores"]] <- mc.cores
+  }
+    
+  distVec <- eval(thisCall)
     #    browser()
     ##visualize the distance vs density
     #    dat <- parentData[c(target,source[-3])]
@@ -107,9 +146,8 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
     source[which.min(distVec)]
     
     
-  }else if(length(params) == 2){
-    stop("Imputing 2d Gate not supported yet!")
-  }
+  
+    
   
 }
 

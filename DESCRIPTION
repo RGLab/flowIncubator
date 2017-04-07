@@ -12,6 +12,8 @@ Imports:
     BiocGenerics,
     plyr,
     flowWorkspace (>= 3.17.15),QUALIFIER (>= 1.3.6),flowCore (>= 1.37.19),
-    openCyto
+    openCyto,
+    emdist,
+    KernSmooth
 biocViews: FlowCytometry, DataImport, Preprocessing, DataRepresentation
 RoxygenNote: 5.0.1

@@ -17,7 +17,11 @@ nearestSamples(gs, node, failed, passed = NULL, ...)
 By default, all samples other than failed will be used.
 but sometime it is helpful to narrow it down to a few of really good samples.}
 
-\item{...}{other arguments passed to \code{.nearestSample}}
+\item{...}{other arguments passed to \code{.nearestSample}
+n an \code{integer} passed to \code{density} call. default is 512.
+bandwidth, gridsize passed to \code{bkde2D} call. default is c(5, 5) and c(100, 100).
+method density similarity calculation method. Either "ks.test" or "em". For 2d gate, "em" is the only choice.
+mc.cores passed to mclapply for parallel computing. Default is 1.}
 }
 \description{
 impute the gate (flagged as failure by external algorithm) with refGate from nearest neighbour sample
@@ -33,6 +37,12 @@ res <- nearestSamples(gs, node = "CD3", failed = "1349_3_Tcell_A06.fcs")
 
 #fix the gate for the bad samples
 regateNearestSamples(gs, res, "CD3")
+
+#run it on 2d gate and customize some parameters
+#and enable parallel computing to speed it up
+res <- nearestSamples(gs, node = "CD4", failed = "1349_3_Tcell_A06.fcs", gridsize = c(70, 70), mc.cores = 4)
+#fix the 2d gate for the bad samples
+regateNearestSamples(gs, res, "CD4")
 }
 }
 
