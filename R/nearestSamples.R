@@ -33,11 +33,12 @@
 #' @export
 nearestSamples <- function(gs, node, failed, passed = NULL, ...){
   #get samples that do not fail the QA check
-  #  browser()
+  failed <- as.vector(failed)
   samples <- sampleNames(gs)
   failedInd <- match(failed,samples)
   if(is.null(passed))
     passed <- samples[-c(failedInd)]
+  
   sapply(failed,function(thisTarget){
     message("Finding reference sample for: ",thisTarget)
     .nearestSample(gs, node = node, target = thisTarget, source = passed, ...) 
@@ -116,7 +117,7 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
       }else
       {
         thisDen <- bkde2D(thisExpr, bandwidth = bandwidth,  gridsize = gridsize, ...)
-        contour(thisDen$x1, thisDen$x2, thisDen$fhat)
+        # contour(thisDen$x1, thisDen$x2, thisDen$fhat)
         thisMat <- thisDen$fhat
         thisDist <- emd2d(tMat,thisMat)    
       }
