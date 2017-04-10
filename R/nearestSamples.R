@@ -65,6 +65,7 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
   parentNode <- getParent(thisGh, node)
   thisGate <- getGate(thisGh, node)
   params <- parameters(thisGate)
+  nDim <- length(params)
   parentData <- getData(gs,parentNode)[,params]
   #get data
   tData <- parentData[[target]]
@@ -76,15 +77,12 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
   
   tExpr <- exprs(tData)
   
-  if(length(params) > 2)
+  if(nDim > 2)
     stop("Imputing Gate on more than 2 dimensions is not supported yet!")
-  
-  if(length(params) == 2)
-    method <- "em"
   
   if(method == "em"){
     #get density of failed sample
-    if(length(params) == 1)
+    if(nDim == 1)
     {
       tDen <- density(tExpr, n =n ,...)
       tMat <- matrix(c(tDen$y,tDen$x),ncol = 2)  
@@ -108,10 +106,13 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
     #cal the dist
     #                              browser()
     if(method == "ks.test"){
-      thisDist <- ks.test(tExpr,thisExpr)$statistic
+      thisDist <- sapply(seq_len(nDim), function(i){
+        ks.test(tExpr[,i],thisExpr[,i])$statistic
+      })
+      thisDist <- sum(thisDist)
     }else if(method == "em"){
       #EM
-      if(length(params) == 1){
+      if(nDim == 1){
         thisDen <- density(thisExpr, n =n ,...)
         thisMat <- matrix(c(thisDen$y,thisDen$x),ncol = 2)
         thisDist <- emd(tMat,thisMat)    
