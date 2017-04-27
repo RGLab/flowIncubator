@@ -11,7 +11,7 @@
 #' @param markerMap named list of marker names to gate names, eg. list("CD4/IL2" = "IL2","CD4/IFNg" = "IFNg")
 #' @param swap boolean for whether marker and gate names (from markerMap above) should be swapped. Passed onto getSingleCellExpression()
 #' @param groupBy columns of the \code{gatingSet}'s phenoData, same number of cells will be sampled from each group
-#' @param degreeFilter keep cells of this degree and higher, useful when tSNE takes too long to run
+#' @param degreeFilter only keep cells which have degree higher than this parameter, useful when tSNE takes too long to run
 #' @param seed since tSNE is random, need a random seed so we can reproduce results
 #' @param theta parameter to be passed to the \code{Rtsne} function
 #' @param ... other parameters to be passed to the \code{Rtsne} function
