@@ -18,4 +18,3 @@ regateNearestSamples(gs, samples, gate_name)
 perform the actual regating of identified bad samples with gates from good samples
  using the named vector from flowIncubator:::.nearestSamples()
 }
-

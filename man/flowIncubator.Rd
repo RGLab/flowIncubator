@@ -26,4 +26,3 @@ Mike Jiang \email{wjiang2@fhcrc.org},
 Maintainer: Mike Jiang \email{wjiang2@fhcrc.org}
 }
 \keyword{package}
-

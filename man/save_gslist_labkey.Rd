@@ -13,4 +13,3 @@ otherwise, it behaves the same as \code{save_gslist}
 \description{
 a wrapper for \code{save_gslist}
 }
-

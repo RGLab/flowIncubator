@@ -28,4 +28,3 @@ mat_of_cvmin_clusters <- extract_citrus_clusters(""citrusOutput_10000cells/Age.r
 2. to extract a particular cluster from the RDSfile, specify its cluster_id
 mat_of_cluster12345 <- extract_citrus_clusters(""citrusOutput_10000cells/Age.rds", anno, cluster_id=12345, markers)
 }
-

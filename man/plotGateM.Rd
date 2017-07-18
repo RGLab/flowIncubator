@@ -11,4 +11,3 @@ plotGateM(formula, gs, parent, children, ...)
 get parent data
 get overlay data
 }
-

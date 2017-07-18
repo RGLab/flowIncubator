@@ -25,4 +25,3 @@ the resolved group results.
  groups <- get_groups(wsFiles, "(_MD)|(_SK)")
 }
 }
-

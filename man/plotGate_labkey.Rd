@@ -18,4 +18,3 @@ This API is mainly used for labkey module. It takes a parent index instead of th
 When there is no gate associated with the x,y channel specified by user, it simply plots the \code{xyplot} 
 or \code{densityplot} without the gate.
 }
-
