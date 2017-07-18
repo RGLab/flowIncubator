@@ -107,7 +107,7 @@ nearestSamples <- function(gs, node, failed, passed = NULL, ...){
     #                              browser()
     if(method == "ks.test"){
       thisDist <- sapply(seq_len(nDim), function(i){
-        ks.test(tExpr[,i],thisExpr[,i])$statistic
+        ksstat(tExpr[,i],thisExpr[,i])
       })
       thisDist <- sum(thisDist)
     }else if(method == "em"){
