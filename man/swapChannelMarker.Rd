@@ -17,4 +17,3 @@ It is useful to prepare multiple GatingSets for merging when the marker (instead
 It basically updates the dimension names of the underling flow data as well as the gate definitions stored in GatingSets. 
 It's important to be aware that the gates in the original GatingSet will be updated even a new GatingSet object will be returend as the result.
 }
-

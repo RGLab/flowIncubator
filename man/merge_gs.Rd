@@ -2,6 +2,7 @@
 % Please edit documentation in R/flowWorkspace-methods.R, R/pipeline.R
 \name{merge_gs}
 \alias{merge_gs}
+\alias{merge_gs}
 \title{this is the wrapper for labkey where only one gslist to be returned
 cluster/merge GatingSets based on the gating tree structures.}
 \usage{
@@ -46,10 +47,9 @@ In order to further merge multiple GatingSet objects into one, use \code{\link{r
 	
 }
 }
-\author{
-Mike Jiang \email{wjiang2@fhcrc.org}
-}
 \seealso{
 \code{\link{rbind2}},\code{\link{GatingSetList}}
 }
-
+\author{
+Mike Jiang \email{wjiang2@fhcrc.org}
+}

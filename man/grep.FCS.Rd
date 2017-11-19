@@ -24,4 +24,3 @@ grep.FCS(pattern = bcells[2],  x = c(bcells,tcells))
  #return TRUE  TRUE FALSE FALSE
 }
 }
-

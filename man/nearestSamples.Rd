@@ -45,4 +45,3 @@ res <- nearestSamples(gs, node = "CD4", failed = "1349_3_Tcell_A06.fcs", gridsiz
 regateNearestSamples(gs, res, "CD4")
 }
 }
-

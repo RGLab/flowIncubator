@@ -20,4 +20,3 @@ Our goal here is to use swap the marker names and the channel names within a
 \code{flowFrame} object to ensure that the \code{flowFrame} objects across
 centers can be merged into a single \code{flowSet}.
 }
-

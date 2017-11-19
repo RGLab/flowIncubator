@@ -38,4 +38,3 @@ a \code{matrix} of X and Y coordinates
 IMPORTANT: Requires a valid gatingSet with cytokine gates downstream of a parent gate
 Also expects that pData(gs) contains at least columns: 'name', 'ptid' so we can identify cells later
 }
-
