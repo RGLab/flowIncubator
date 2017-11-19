@@ -38,42 +38,23 @@ swapChannelMarker <- function(gs){
 #'
 #'
 #' @param fr the \code{flowFrame} object to preprocess
-#' @param use.exprs logical indicate that if the data matrix will be updated as well.
-#' @return the updated \code{flowFrame} object containing only the markers of
-#' interest
+#' @return the updated \code{flowFrame} object 
+#' 
 #' @export 
-swapChannelMarker_flowframe <- function(fr, use.exprs = TRUE) {
+swapChannelMarker_flowframe <- function(fr) {
   
   
-  fr_rownames <- rownames(pData(parameters(fr)))
+  pd <- pData(parameters(fr))
+  chnls <- as.vector(pd[["name"]])
+  markers <- as.vector(pd[["desc"]])
+  toSwap <- !is.na(markers)
+  new.chnls <- chnls
+  new.chnls[toSwap] <- markers[toSwap]
+  new.markers <- chnls[toSwap]
+  names(new.markers) <- new.chnls[toSwap]
   
-  # Preprocesses each of the columns in the flow_frame
-  for (j in seq_len(length(flowCore::colnames(fr)))) {
-    
-    marker_idx <- paste0(fr_rownames[j], "S")
-    channel_idx <- paste0(fr_rownames[j], "N")
-    
-    marker <- description(fr)[[marker_idx]]
-    channel <- description(fr)[[channel_idx]]
-    
-    # In the case the marker name is given, we swap the marker and channel
-    # names.
-    if (!is.null(marker)) {
-      # Converts the marker names to a common name
-      marker <- as.vector(marker)
-      
-      # Updates the channel with the marker
-      description(fr)[[channel_idx]] <- marker 
-      pData(parameters(fr))[j, "name"] <- marker
-      
-      # Updates the marker information in the flow_frame with the channel
-      description(fr)[[marker_idx]] <- channel
-      pData(parameters(fr))[j, "desc"] <- channel
-    }
-  }
-  
-  if(use.exprs)
-    colnames(exprs(fr)) <- flowCore::colnames(fr)
+  colnames(fr) <- new.chnls
+  markernames(fr) <- new.markers
   
   # Subset to markers of interest
   fr
