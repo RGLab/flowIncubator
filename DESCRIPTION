@@ -15,7 +15,8 @@ Imports:
     openCyto,
     emdist,
     KernSmooth,
-    Rcpp
+    Rcpp,
+    Rtsne
 Remotes:
     RGLab/QUALIFIER
 biocViews: FlowCytometry, DataImport, Preprocessing, DataRepresentation
