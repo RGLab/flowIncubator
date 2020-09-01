@@ -18,7 +18,7 @@ Imports:
     Rcpp,
     Rtsne
 Remotes:
-    RGLab/QUALIFIER
+    RGLab/QUALIFIER@trunk
 biocViews: FlowCytometry, DataImport, Preprocessing, DataRepresentation
 RoxygenNote: 6.0.1
 SystemRequirements: C++11
